@@ -5,14 +5,27 @@ import {
   Plane, Ship, Truck, Check, RefreshCw, Leaf, Calculator, CheckCircle2 
 } from "lucide-react";
 
+const indianCities = [
+  "Mumbai, Maharashtra",
+  "Delhi, NCR",
+  "Bengaluru, Karnataka",
+  "Chennai, Tamil Nadu",
+  "Kolkata, West Bengal",
+  "Hyderabad, Telangana",
+  "Pune, Maharashtra",
+  "Ahmedabad, Gujarat",
+  "Jaipur, Rajasthan",
+  "Kochi, Kerala"
+];
+
 function QuoteForm() {
   // Calculator States: 'form' | 'loading' | 'results' | 'booked'
   const [step, setStep] = useState("form");
   const [loadingPhase, setLoadingPhase] = useState(0);
   
   // Form values
-  const [origin, setOrigin] = useState("Chicago, USA");
-  const [destination, setDestination] = useState("Frankfurt, Germany");
+  const [origin, setOrigin] = useState("Mumbai, Maharashtra");
+  const [destination, setDestination] = useState("Delhi, NCR");
   const [weight, setWeight] = useState(1250);
   const [cargoType, setCargoType] = useState("General");
   const [volume, setVolume] = useState(4.2);
@@ -144,14 +157,16 @@ function QuoteForm() {
                   <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Origin</label>
                   <div className="relative">
                     <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
-                    <input
-                      type="text"
-                      required
+                    <select
                       value={origin}
                       onChange={(e) => setOrigin(e.target.value)}
-                      placeholder="City, Country"
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm font-medium focus:border-primary-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all"
-                    />
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-10 text-sm font-medium focus:border-primary-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all appearance-none cursor-pointer"
+                    >
+                      {indianCities.map((city) => (
+                        <option key={city} value={city}>{city}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-4.5 pointer-events-none border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-400" />
                   </div>
                 </div>
 
@@ -160,14 +175,16 @@ function QuoteForm() {
                   <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Destination</label>
                   <div className="relative">
                     <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
-                    <input
-                      type="text"
-                      required
+                    <select
                       value={destination}
                       onChange={(e) => setDestination(e.target.value)}
-                      placeholder="City, Country"
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm font-medium focus:border-primary-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all"
-                    />
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-10 text-sm font-medium focus:border-primary-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all appearance-none cursor-pointer"
+                    >
+                      {indianCities.map((city) => (
+                        <option key={city} value={city}>{city}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-4.5 pointer-events-none border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-400" />
                   </div>
                 </div>
               </div>
