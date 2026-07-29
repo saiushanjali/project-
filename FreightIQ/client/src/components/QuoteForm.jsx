@@ -161,11 +161,20 @@ function QuoteForm() {
                       value={origin}
                       onChange={(e) => setOrigin(e.target.value)}
                       required
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-10 text-sm font-medium focus:border-primary-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all appearance-none cursor-pointer"
+                      className={`w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-10 text-sm font-medium focus:border-primary-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all appearance-none cursor-pointer ${
+                        origin === "" ? "text-slate-400 dark:text-slate-500" : "text-slate-800 dark:text-slate-100"
+                      }`}
                     >
-                      <option value="" disabled>Select Origin</option>
+                      <option value="" disabled className="text-slate-400">Select Origin</option>
                       {indianCities.map((city) => (
-                        <option key={city} value={city}>{city}</option>
+                        <option 
+                          key={city} 
+                          value={city} 
+                          disabled={city === destination}
+                          className="text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950"
+                        >
+                          {city}
+                        </option>
                       ))}
                     </select>
                     <div className="absolute right-4 top-4.5 pointer-events-none border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-400" />
@@ -181,11 +190,20 @@ function QuoteForm() {
                       value={destination}
                       onChange={(e) => setDestination(e.target.value)}
                       required
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-10 text-sm font-medium focus:border-primary-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all appearance-none cursor-pointer"
+                      className={`w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-10 text-sm font-medium focus:border-primary-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all appearance-none cursor-pointer ${
+                        destination === "" ? "text-slate-400 dark:text-slate-500" : "text-slate-800 dark:text-slate-100"
+                      }`}
                     >
-                      <option value="" disabled>Select Destination</option>
+                      <option value="" disabled className="text-slate-400">Select Destination</option>
                       {indianCities.map((city) => (
-                        <option key={city} value={city}>{city}</option>
+                        <option 
+                          key={city} 
+                          value={city} 
+                          disabled={city === origin}
+                          className="text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950"
+                        >
+                          {city}
+                        </option>
                       ))}
                     </select>
                     <div className="absolute right-4 top-4.5 pointer-events-none border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-400" />
