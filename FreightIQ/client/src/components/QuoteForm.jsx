@@ -24,8 +24,8 @@ function QuoteForm() {
   const [loadingPhase, setLoadingPhase] = useState(0);
   
   // Form values
-  const [origin, setOrigin] = useState("Mumbai, Maharashtra");
-  const [destination, setDestination] = useState("Delhi, NCR");
+  const [origin, setOrigin] = useState("");
+  const [destination, setDestination] = useState("");
   const [weight, setWeight] = useState(1250);
   const [cargoType, setCargoType] = useState("General");
   const [volume, setVolume] = useState(4.2);
@@ -160,8 +160,10 @@ function QuoteForm() {
                     <select
                       value={origin}
                       onChange={(e) => setOrigin(e.target.value)}
+                      required
                       className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-10 text-sm font-medium focus:border-primary-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all appearance-none cursor-pointer"
                     >
+                      <option value="" disabled>Select Origin</option>
                       {indianCities.map((city) => (
                         <option key={city} value={city}>{city}</option>
                       ))}
@@ -178,8 +180,10 @@ function QuoteForm() {
                     <select
                       value={destination}
                       onChange={(e) => setDestination(e.target.value)}
+                      required
                       className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-10 text-sm font-medium focus:border-primary-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all appearance-none cursor-pointer"
                     >
+                      <option value="" disabled>Select Destination</option>
                       {indianCities.map((city) => (
                         <option key={city} value={city}>{city}</option>
                       ))}

@@ -7,34 +7,34 @@ function SlaNetwork() {
 
   const regions = {
     na: {
-      name: "North America",
+      name: "West & Central India",
       hubs: [
-        { name: "Chicago O'Hare (ORD) Hub", status: "Operational", ping: "99.8% SLA", delay: "Normal" },
-        { name: "LA Port Terminal (LAX)", status: "Operational", ping: "99.2% SLA", delay: "Normal" },
-        { name: "New York JFK Cargo", status: "Operational", ping: "99.6% SLA", delay: "Normal" }
+        { name: "Nhava Sheva Port Hub (JNPT)", status: "Operational", ping: "99.8% SLA", delay: "Normal" },
+        { name: "Mumbai Air Cargo Hub (BOM)", status: "Operational", ping: "99.2% SLA", delay: "Normal" },
+        { name: "Indore Logistics Park", status: "Operational", ping: "99.6% SLA", delay: "Normal" }
       ],
-      avgTransit: "2.4 Days",
-      activeLanes: "2,410 Lanes"
+      avgTransit: "1.2 Days",
+      activeLanes: "1,850 Lanes"
     },
     eu: {
-      name: "Europe",
+      name: "North India",
       hubs: [
-        { name: "Frankfurt Hub (FRA)", status: "Operational", ping: "99.9% SLA", delay: "Normal" },
-        { name: "Rotterdam Port Terminal", status: "Operational", ping: "98.7% SLA", delay: "Normal" },
-        { name: "London Heathrow Cargo", status: "Operational", ping: "99.5% SLA", delay: "Normal" }
+        { name: "Delhi IGI Air Cargo (DEL)", status: "Operational", ping: "99.9% SLA", delay: "Normal" },
+        { name: "ICD Dadri Terminal", status: "Operational", ping: "98.7% SLA", delay: "Normal" },
+        { name: "Ludhiana Logistics Hub", status: "Operational", ping: "99.5% SLA", delay: "Normal" }
       ],
-      avgTransit: "3.1 Days",
-      activeLanes: "3,850 Lanes"
+      avgTransit: "1.5 Days",
+      activeLanes: "2,120 Lanes"
     },
     apac: {
-      name: "Asia Pacific",
+      name: "South & East India",
       hubs: [
-        { name: "Shanghai Port Hub (PVG)", status: "Operational", ping: "99.1% SLA", delay: "Normal" },
-        { name: "Singapore Port Cargo", status: "Operational", ping: "99.7% SLA", delay: "Normal" },
-        { name: "Tokyo Narita Hub (NRT)", status: "Operational", ping: "99.4% SLA", delay: "Normal" }
+        { name: "Chennai Port Terminal (MAA)", status: "Operational", ping: "99.1% SLA", delay: "Normal" },
+        { name: "Bengaluru Cargo Hub (BLR)", status: "Operational", ping: "99.7% SLA", delay: "Normal" },
+        { name: "Kolkata Port Trust (CCU)", status: "Operational", ping: "99.4% SLA", delay: "Normal" }
       ],
-      avgTransit: "2.9 Days",
-      activeLanes: "4,120 Lanes"
+      avgTransit: "1.8 Days",
+      activeLanes: "3,240 Lanes"
     }
   };
 
@@ -53,7 +53,7 @@ function SlaNetwork() {
               Live Network Status
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-              Global Logistics Infrastructure & SLA
+              National Logistics Infrastructure & SLA
             </h2>
             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
               We monitor shipping lanes, customs gates, and carrier volumes around the clock. If port congestion spikes, our AI automatically recalculates routes and triggers carrier transfers.
@@ -100,7 +100,7 @@ function SlaNetwork() {
               {/* Graphic Ring Visual (pulsating) */}
               <div className="absolute top-6 right-6 flex items-center gap-1.5 text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 px-3 py-1 rounded-full border border-emerald-200/30">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                99.64% Global SLA Active
+                99.64% National SLA Active
               </div>
 
               <h3 className="text-base font-bold text-slate-900 dark:text-white text-left mb-6 flex items-center gap-2">
