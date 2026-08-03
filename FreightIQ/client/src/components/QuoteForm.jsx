@@ -10,8 +10,7 @@ import {
   Leaf, 
   ArrowRight,
   RefreshCw,
-  ArrowLeft,
-  CheckCircle2
+  ArrowLeft
 } from 'lucide-react'
 
 const CARGO_TYPES = [

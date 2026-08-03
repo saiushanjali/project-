@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, useInView } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { 
   Shield, 
   Zap, 
@@ -10,8 +10,6 @@ import {
   Leaf, 
   ArrowRight, 
   CheckCircle,
-  Truck,
-  Sparkles,
   MessageSquare,
   Mail,
   Send,
@@ -23,55 +21,7 @@ import {
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import QuoteForm from '../components/QuoteForm'
-import heroImage from '../assets/hero.png'
 
-// Animated Counter Component using Intersection Observer (via useInView)
-function Counter({ value, suffix = '', duration = 1500 }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: '-50px' })
-
-  useEffect(() => {
-    if (!isInView) return
-
-    let start = 0
-    // Extract numerical value
-    const end = parseFloat(value.replace(/[^0-9.]/g, ''))
-    if (isNaN(end)) return
-
-    const startTime = performance.now()
-
-    const animate = (currentTime) => {
-      const elapsed = currentTime - startTime
-      const progress = Math.min(elapsed / duration, 1)
-      
-      // Ease out quad formula
-      const easeProgress = progress * (2 - progress)
-      const currentVal = start + easeProgress * (end - start)
-      
-      if (value.includes('.')) {
-        setCount(parseFloat(currentVal.toFixed(1)))
-      } else {
-        setCount(Math.floor(currentVal))
-      }
-
-      if (progress < 1) {
-        requestAnimationFrame(animate)
-      } else {
-        setCount(end)
-      }
-    }
-
-    requestAnimationFrame(animate)
-  }, [isInView, value, duration])
-
-  return (
-    <span ref={ref} className="tabular-nums">
-      {count}
-      {suffix}
-    </span>
-  )
-}
 
 const features = [
   {
@@ -135,12 +85,6 @@ const steps = [
   },
 ]
 
-const stats = [
-  { value: '5', suffix: 'M+', label: 'Annual Shipments Routed' },
-  { value: '99.8', suffix: '%', label: 'On-Time Dispatch Rate' },
-  { value: '20', suffix: 'M+', prefix: '$', label: 'Client Logistics Fees Saved' },
-  { value: '45', suffix: '%', label: 'Carbon Emissions Reduction' },
-]
 
 export default function LandingPage() {
   const [contactSubmitted, setContactSubmitted] = useState(false)
@@ -356,34 +300,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Statistics / Counters Section */}
-      <section className="py-20 border-t border-slate-200/60 relative overflow-hidden bg-white">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] gradient-primary opacity-5 blur-3xl pointer-events-none rounded-full" />
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
-            {stats.map((stat, idx) => (
-              <motion.div
-                key={stat.label}
-                initial={{ scale: 0.9, opacity: 0 }}
-                whileInView={{ scale: 1, opacity: 1 }}
-                viewport={{ once: true, margin: '-50px' }}
-                transition={{ type: 'spring', stiffness: 80, delay: idx * 0.1 }}
-                className="glass-card rounded-2xl p-6 text-center border border-slate-100 relative group hover:border-blue-500/20 transition-all duration-300 shadow-sm"
-              >
-                <p className="text-slate-500 text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2">
-                  {stat.label}
-                </p>
-                <div className="text-3xl sm:text-5xl font-black text-slate-900 flex items-center justify-center gap-0.5">
-                  {stat.prefix && <span className="text-blue-600">{stat.prefix}</span>}
-                  <Counter value={stat.value} suffix={stat.suffix} />
-                </div>
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-blue-650 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* CTA Conversion Banner */}
       <section className="py-16 md:py-20 border-t border-slate-200/60 bg-slate-50">
