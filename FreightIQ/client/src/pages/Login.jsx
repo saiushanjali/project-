@@ -29,9 +29,11 @@ export default function LoginPage() {
     setTimeout(() => {
       setIsLoading(false)
       setIsSuccess(true)
+      localStorage.setItem('token', 'mock-jwt-token')
+      localStorage.setItem('userEmail', formData.email)
       setTimeout(() => {
-        // Redirect to homepage or dashboard (simulated login)
-        navigate('/')
+        // Redirect to dashboard (simulated login)
+        navigate('/dashboard')
       }, 1500)
     }, 1500)
   }
@@ -130,7 +132,7 @@ export default function LoginPage() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-900">Login Successful</h3>
                 <p className="text-slate-500 text-sm">
-                  Welcome back to FreightIQ. Redirecting you to the landing page...
+                  Welcome back to FreightIQ. Redirecting you to the dashboard...
                 </p>
               </motion.div>
             ) : (

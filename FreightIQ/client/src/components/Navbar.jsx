@@ -13,6 +13,7 @@ const navLinks = [
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const location = useLocation()
 
   useEffect(() => {
@@ -20,6 +21,15 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem('token'))
+  }, [location])
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    setIsLoggedIn(false)
+  }
 
   const handleNavClick = (e, href) => {
     if (location.pathname !== '/') return
@@ -77,14 +87,31 @@ export default function Navbar() {
 
           {/* CTA Button */}
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              to="/login"
-              className="relative px-6 py-2.5 text-sm font-semibold text-white rounded-xl overflow-hidden group shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 transition-all"
-            >
-              <div className="absolute inset-0 gradient-primary opacity-95 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute inset-0 gradient-primary opacity-0 group-hover:opacity-60 blur-lg transition-opacity duration-300" />
-              <span className="relative">Login</span>
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="px-5 py-2.5 text-sm font-bold text-slate-700 hover:text-slate-950 rounded-xl hover:bg-slate-100 border border-slate-200 transition-all"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-5 py-2.5 text-sm font-bold text-white rounded-xl gradient-primary shadow-md hover:shadow-lg active:scale-95 transition-all"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="relative px-6 py-2.5 text-sm font-semibold text-white rounded-xl overflow-hidden group shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 transition-all"
+              >
+                <div className="absolute inset-0 gradient-primary opacity-95 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 gradient-primary opacity-0 group-hover:opacity-60 blur-lg transition-opacity duration-300" />
+                <span className="relative">Login</span>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -119,14 +146,35 @@ export default function Navbar() {
                   {link.name}
                 </a>
               ))}
-              <div className="pt-2 border-t border-slate-100">
-                <Link
-                  to="/login"
-                  className="block px-4 py-3 text-sm font-semibold text-center text-white gradient-primary rounded-xl"
-                  onClick={() => setIsMobileOpen(false)}
-                >
-                  Login
-                </Link>
+              <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                {isLoggedIn ? (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      className="block px-4 py-3 text-sm font-semibold text-center text-slate-700 bg-slate-100 rounded-xl"
+                      onClick={() => setIsMobileOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleLogout()
+                        setIsMobileOpen(false)
+                      }}
+                      className="block w-full px-4 py-3 text-sm font-semibold text-center text-white gradient-primary rounded-xl"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="block px-4 py-3 text-sm font-semibold text-center text-white gradient-primary rounded-xl"
+                    onClick={() => setIsMobileOpen(false)}
+                  >
+                    Login
+                  </Link>
+                )}
               </div>
             </div>
           </motion.div>

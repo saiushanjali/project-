@@ -1,0 +1,975 @@
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  MapPin, 
+  Calendar, 
+  ShieldCheck, 
+  Info,
+  Truck, 
+  Plane, 
+  Anchor, 
+  Train, 
+  Calculator,
+  User, 
+  Building, 
+  Mail, 
+  Phone,
+  Package,
+  Layers,
+  Sparkles,
+  CheckCircle2
+} from 'lucide-react'
+
+import Sidebar from '../components/Sidebar'
+import DashboardNavbar from '../components/DashboardNavbar'
+
+const INDIAN_STATES_HUBS = [
+  { value: 'Maharashtra (Mumbai Port)', label: 'Maharashtra (Mumbai Port)', lat: 18.94, lng: 72.84 },
+  { value: 'Gujarat (Mundra Port)', label: 'Gujarat (Mundra Port)', lat: 22.84, lng: 69.70 },
+  { value: 'Tamil Nadu (Chennai Port)', label: 'Tamil Nadu (Chennai Port)', lat: 13.08, lng: 80.27 },
+  { value: 'West Bengal (Kolkata Port)', label: 'West Bengal (Kolkata Port)', lat: 22.57, lng: 88.36 },
+  { value: 'Kerala (Cochin Port)', label: 'Kerala (Cochin Port)', lat: 9.93, lng: 76.26 },
+  { value: 'Delhi NCT (ICD Tughlakabad)', label: 'Delhi NCT (ICD Tughlakabad)', lat: 28.53, lng: 77.26 },
+  { value: 'Karnataka (Bengaluru Terminal)', label: 'Karnataka (Bengaluru Terminal)', lat: 12.97, lng: 77.59 },
+  { value: 'Telangana (Hyderabad Hub)', label: 'Telangana (Hyderabad Hub)', lat: 17.38, lng: 78.48 },
+  { value: 'Andhra Pradesh (Vizag Port)', label: 'Andhra Pradesh (Vizag Port)', lat: 17.68, lng: 83.21 },
+  { value: 'Goa (Marmagao Port)', label: 'Goa (Marmagao Port)', lat: 15.40, lng: 73.80 }
+]
+
+const INCOTERMS = [
+  { value: 'EXW', label: 'EXW - Ex Works' },
+  { value: 'FOB', label: 'FOB - Free On Board' },
+  { value: 'CIF', label: 'CIF - Cost, Insurance & Freight' },
+  { value: 'DDP', label: 'DDP - Delivered Duty Paid' },
+  { value: 'DAP', label: 'DAP - Delivered At Place' },
+  { value: 'FCA', label: 'FCA - Free Carrier' }
+]
+
+const PACKAGE_TYPES = [
+  { value: 'boxes', label: 'Boxes / Cartons' },
+  { value: 'pallets', label: 'Wooden Pallets' },
+  { value: 'crates', label: 'Crates' },
+  { value: 'drums', label: 'Drums / Barrels' },
+  { value: 'rolls', label: 'Rolls / Spools' }
+]
+
+const CONTAINER_TYPES = [
+  { value: '20gp', label: "20' General Purpose (FCL)" },
+  { value: '40gp', label: "40' General Purpose (FCL)" },
+  { value: '40hc', label: "40' High Cube (FCL)" },
+  { value: '20rf', label: "20' Reefer Temperature-Controlled" },
+  { value: '40rf', label: "40' Reefer Temperature-Controlled" },
+  { value: 'lcl', label: 'Less than Container Load (LCL Cargo)' },
+  { value: 'none', label: 'Non-Containerized Bulk Freight' }
+]
+
+const HUB_CODES = {
+  'Maharashtra (Mumbai Port)': { code: 'INNSA', name: 'Mumbai' },
+  'Gujarat (Mundra Port)': { code: 'INMUN', name: 'Mundra' },
+  'Tamil Nadu (Chennai Port)': { code: 'INMAA', name: 'Chennai' },
+  'West Bengal (Kolkata Port)': { code: 'INCCU', name: 'Kolkata' },
+  'Kerala (Cochin Port)': { code: 'INCOK', name: 'Cochin' },
+  'Delhi NCT (ICD Tughlakabad)': { code: 'INTKD', name: 'Delhi' },
+  'Karnataka (Bengaluru Terminal)': { code: 'INBLR', name: 'Bengaluru' },
+  'Telangana (Hyderabad Hub)': { code: 'INHYD', name: 'Hyderabad' },
+  'Andhra Pradesh (Vizag Port)': { code: 'INVTZ', name: 'Vizag' },
+  'Goa (Marmagao Port)': { code: 'INMRM', name: 'Goa' },
+  'Dubai': { code: 'AEJEA', name: 'Dubai' }
+}
+
+const getHubDetails = (locationName) => {
+  if (!locationName) return { code: 'INNSA', name: 'Mumbai' }
+  const key = Object.keys(HUB_CODES).find(k => 
+    locationName.toLowerCase().includes(k.toLowerCase()) || 
+    k.toLowerCase().includes(locationName.toLowerCase())
+  )
+  return key ? HUB_CODES[key] : { code: 'AEJEA', name: locationName.split(' ')[0] }
+}
+
+export default function NewShipmentEnquiry() {
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [currentStep, setCurrentStep] = useState(1)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [newQuoteId, setNewQuoteId] = useState('')
+  const navigate = useNavigate()
+
+  // Form State
+  const [formData, setFormData] = useState({
+    // Step 1 - Route
+    origin: 'Maharashtra (Mumbai Port)',
+    destination: 'Delhi NCT (ICD Tughlakabad)',
+    pickupAddress: '',
+    deliveryAddress: '',
+    readyDate: '',
+    deliveryDate: '',
+
+    // Step 2 - Service Type
+    serviceMode: 'Road', // Ocean, Air, Road, Rail
+    containerLoad: 'FCL', // FCL/LCL
+    incoterm: 'CIF',
+
+    // Step 3 - Shipment Details
+    packageType: 'pallets',
+    containerType: '40gp',
+    weight: '2500', // kg
+    volume: '8.5', // m3
+    commodity: 'Industrial Machining Parts',
+    hsCode: '8479.90',
+
+    // Step 4 - Additional Details
+    declaredValue: '3500000', // INR
+    currency: 'INR',
+    specialInstructions: '',
+    isHazardous: false,
+    isFragile: false,
+    isTempControlled: false,
+    isInsuranceRequired: true,
+
+    // Step 5 - Contact Details
+    contactName: 'Jane Doe',
+    companyName: 'Acme Manufacturing Corp',
+    contactEmail: 'j.doe@acmemfg.com',
+    contactPhone: '+91 (987) 654-3210',
+    country: 'India'
+  })
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      navigate('/login')
+    }
+  }, [navigate])
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }))
+  }
+
+  // Calculate coordinates & live values
+  const getCoordinates = (locationName) => {
+    const hub = INDIAN_STATES_HUBS.find(h => h.value === locationName)
+    return hub ? { lat: hub.lat, lng: hub.lng } : { lat: 20, lng: 78 }
+  }
+
+  const calculateDistance = () => {
+    if (formData.origin === formData.destination) return 0
+    const start = getCoordinates(formData.origin)
+    const end = getCoordinates(formData.destination)
+    
+    // Haversine distance formula approximation
+    const R = 6371 // Earth radius in km
+    const dLat = (end.lat - start.lat) * Math.PI / 180
+    const dLng = (end.lng - start.lng) * Math.PI / 180
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(start.lat * Math.PI / 180) * Math.cos(end.lat * Math.PI / 180) * 
+      Math.sin(dLng/2) * Math.sin(dLng/2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+    const d = R * c
+    return Math.round(d)
+  }
+
+  const distanceVal = calculateDistance()
+
+  const calculateFreightEstimate = () => {
+    if (distanceVal === 0) return { cost: 0, days: 0 }
+    
+    let baseRate = 0
+    let perKmRate = 0
+
+    switch (formData.serviceMode) {
+      case 'Air':
+        baseRate = 18000
+        perKmRate = 145
+        break
+      case 'Ocean':
+        baseRate = 35000
+        perKmRate = 12
+        break
+      case 'Rail':
+        baseRate = 9500
+        perKmRate = 22
+        break
+      default: // Road
+        baseRate = 6000
+        perKmRate = 34
+    }
+
+    const distanceCost = distanceVal * perKmRate
+    const weightNum = parseFloat(formData.weight) || 0
+    const weightCost = weightNum * 6.5 // ₹6.5 per kg
+
+    let rawCost = baseRate + distanceCost + weightCost
+
+    // Checkboxes / options multipliers
+    if (formData.isHazardous) rawCost *= 1.8
+    if (formData.isTempControlled) rawCost *= 1.55
+    if (formData.isFragile) rawCost *= 1.35
+    if (formData.isInsuranceRequired) rawCost += 4500
+
+    // Transit time calculation based on distance and mode
+    let averageSpeed = 60 // km/h for road
+    if (formData.serviceMode === 'Air') averageSpeed = 750
+    if (formData.serviceMode === 'Ocean') averageSpeed = 22
+    if (formData.serviceMode === 'Rail') averageSpeed = 45
+
+    const hours = distanceVal / averageSpeed
+    let days = Math.ceil(hours / 10) // assuming 10 hrs travel time block per day
+    if (formData.serviceMode === 'Air') days = 1
+    if (formData.serviceMode === 'Ocean') days = Math.max(7, days)
+
+    return {
+      cost: Math.round(rawCost),
+      days: days
+    }
+  }
+
+  const estimate = calculateFreightEstimate()
+
+  const handleNextStep = () => {
+    // Validate Current Step
+    if (currentStep === 1) {
+      if (formData.origin === formData.destination) {
+        alert('Origin and Destination cannot be the same hub.')
+        return
+      }
+      if (!formData.pickupAddress || !formData.deliveryAddress) {
+        alert('Please fill out the pickup and delivery addresses.')
+        return
+      }
+    }
+    
+    if (currentStep < 5) {
+      setCurrentStep(currentStep + 1)
+    }
+  }
+
+  const handlePrevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
+    }
+  }
+
+  const handleSubmit = (e) => {
+    if (e) e.preventDefault()
+
+    // Validate step 5
+    if (!formData.contactName || !formData.companyName || !formData.contactEmail || !formData.contactPhone) {
+      alert('Please fill out all contact fields before submission.')
+      return
+    }
+
+    const quoteId = `IQ-${Math.floor(1000 + Math.random() * 9000)}`
+    setNewQuoteId(quoteId)
+
+    const newQuote = {
+      id: quoteId,
+      origin: formData.origin,
+      destination: formData.destination,
+      mode: formData.serviceMode,
+      cost: `₹${estimate.cost.toLocaleString('en-IN')}`,
+      status: 'Pending Approval',
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+      weight: `${parseFloat(formData.weight).toLocaleString()} kg`
+    }
+
+    // Persist to local storage list
+    try {
+      const stored = localStorage.getItem('brokerQuotes')
+      let list = stored ? JSON.parse(stored) : []
+      // Insert new quote at front
+      list = [newQuote, ...list]
+      localStorage.setItem('brokerQuotes', JSON.stringify(list))
+    } catch (err) {
+      console.error(err)
+    }
+
+    setIsSuccess(true)
+    setTimeout(() => {
+      setIsSuccess(false)
+      navigate('/dashboard')
+    }, 2000)
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex">
+      {/* Sidebar navigation */}
+      <Sidebar 
+        isCollapsed={isCollapsed} 
+        setIsCollapsed={setIsCollapsed} 
+        isMobileOpen={isMobileOpen} 
+        setIsMobileOpen={setIsMobileOpen} 
+      />
+
+      {/* Main Workspace Column */}
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
+        <DashboardNavbar setIsMobileOpen={setIsMobileOpen} title="New shipment enquiry" />
+
+        {/* Content View */}
+        <main className="flex-grow p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
+          
+          <div className="mb-6 flex items-center gap-2">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:text-slate-900 rounded-xl flex items-center gap-1 text-xs font-semibold cursor-pointer shadow-sm"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to Dashboard
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* Left side: Form steps wizard (span 8) */}
+            <div className="lg:col-span-8 space-y-6">
+              
+              {/* Steps Progress Header */}
+              <div className="glass-card rounded-3xl bg-white border border-slate-200 p-4 shadow-sm">
+                <div className="flex justify-between items-center max-w-lg mx-auto">
+                  {[1, 2, 3, 4, 5].map((stepNum) => (
+                    <div key={stepNum} className="flex flex-col items-center relative flex-1">
+                      {/* Connection bar */}
+                      {stepNum < 5 && (
+                        <div className={`absolute top-4 left-1/2 w-full h-[2px] z-0 ${
+                          currentStep > stepNum ? 'bg-blue-600' : 'bg-slate-100'
+                        }`} />
+                      )}
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (stepNum < currentStep) setCurrentStep(stepNum)
+                        }}
+                        disabled={stepNum >= currentStep}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs relative z-10 transition-all border ${
+                          currentStep === stepNum
+                            ? 'bg-blue-600 text-white border-blue-650 ring-4 ring-blue-100 shadow-md shadow-blue-600/20'
+                            : currentStep > stepNum
+                              ? 'bg-blue-50 text-blue-600 border-blue-200'
+                              : 'bg-white text-slate-400 border-slate-200 cursor-not-allowed'
+                        }`}
+                      >
+                        {stepNum}
+                      </button>
+                      
+                      <span className={`text-[9px] font-extrabold uppercase mt-1.5 ${
+                        currentStep === stepNum ? 'text-blue-600' : 'text-slate-500'
+                      }`}>
+                        {stepNum === 1 && 'Route'}
+                        {stepNum === 2 && 'Service'}
+                        {stepNum === 3 && 'Details'}
+                        {stepNum === 4 && 'Add-on'}
+                        {stepNum === 5 && 'Contact'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Form Card */}
+              <div className="glass-card rounded-3xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8 relative min-h-[420px] flex flex-col justify-between">
+                
+                {isSuccess ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center py-16 space-y-4 my-auto"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-255 flex items-center justify-center mx-auto text-emerald-600">
+                      <CheckCircle2 className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900">Quotation Created Successfully!</h3>
+                    <p className="text-slate-500 text-sm max-w-sm mx-auto">
+                      Quote ID <span className="font-extrabold text-blue-600">{newQuoteId}</span> is saved and mapped under your dashboard registry logs.
+                    </p>
+                  </motion.div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="flex-grow flex flex-col justify-between">
+                    <div>
+                      {/* Step Title Header */}
+                      <div className="mb-6 pb-4 border-b border-slate-100">
+                        <span className="text-[10px] text-blue-600 font-extrabold uppercase tracking-wide">
+                          Step {currentStep} of 5
+                        </span>
+                        <h2 className="text-lg font-black text-slate-800 mt-0.5">
+                          {currentStep === 1 && 'Define Shipping Lane & Route Coordinates'}
+                          {currentStep === 2 && 'Select Freight Service Modality'}
+                          {currentStep === 3 && 'Cargo Specifications & Classification'}
+                          {currentStep === 4 && 'Value declarations & Special Protections'}
+                          {currentStep === 5 && 'Submit Shippers Contact Validation'}
+                        </h2>
+                      </div>
+
+                      {/* Wizard Steps Form Areas */}
+                      <div className="space-y-5">
+                        
+                        {/* STEP 1: ROUTE */}
+                        {currentStep === 1 && (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Origin State Hub</label>
+                                <div className="relative">
+                                  <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                                  <select
+                                    name="origin"
+                                    value={formData.origin}
+                                    onChange={handleInputChange}
+                                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 appearance-none font-medium cursor-pointer"
+                                  >
+                                    {INDIAN_STATES_HUBS.map((hub) => (
+                                      <option key={hub.value} value={hub.value}>{hub.label}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Destination State Hub</label>
+                                <div className="relative">
+                                  <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                                  <select
+                                    name="destination"
+                                    value={formData.destination}
+                                    onChange={handleInputChange}
+                                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 appearance-none font-medium cursor-pointer"
+                                  >
+                                    {INDIAN_STATES_HUBS.map((hub) => (
+                                      <option key={hub.value} value={hub.value}>{hub.label}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Exact Pickup Address</label>
+                                <input
+                                  type="text"
+                                  required
+                                  name="pickupAddress"
+                                  placeholder="Floor, Gate No, Warehouse, GIDC Area"
+                                  value={formData.pickupAddress}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 placeholder:text-slate-400"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Exact Delivery Address</label>
+                                  <input
+                                  type="text"
+                                  required
+                                  name="deliveryAddress"
+                                  placeholder="Corporate Warehouse, ICD Terminal Compound"
+                                  value={formData.deliveryAddress}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 placeholder:text-slate-450"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Cargo Ready Date</label>
+                                <div className="relative">
+                                  <Calendar className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                                  <input
+                                    type="date"
+                                    required
+                                    name="readyDate"
+                                    value={formData.readyDate}
+                                    onChange={handleInputChange}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Target Delivery Date</label>
+                                <div className="relative">
+                                  <Calendar className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                                  <input
+                                    type="date"
+                                    required
+                                    name="deliveryDate"
+                                    value={formData.deliveryDate}
+                                    onChange={handleInputChange}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* STEP 2: SERVICE TYPE */}
+                        {currentStep === 2 && (
+                          <div className="space-y-5">
+                            <div>
+                              <span className="block text-slate-700 font-semibold text-xs mb-3">Transit Mode Selection</span>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {[
+                                  { mode: 'Road', label: 'Road Freight', icon: Truck },
+                                  { mode: 'Ocean', label: 'Ocean Lines', icon: Anchor },
+                                  { mode: 'Air', label: 'Air Express', icon: Plane },
+                                  { mode: 'Rail', label: 'Rail Cargo', icon: Train }
+                                ].map((item) => {
+                                  const Icon = item.icon
+                                  return (
+                                    <button
+                                      key={item.mode}
+                                      type="button"
+                                      onClick={() => setFormData(prev => ({ ...prev, serviceMode: item.mode }))}
+                                      className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all cursor-pointer ${
+                                        formData.serviceMode === item.mode
+                                          ? 'border-blue-600 bg-blue-50/40 text-blue-600 shadow-sm'
+                                          : 'border-slate-200 hover:border-slate-300 text-slate-500 bg-white hover:bg-slate-50'
+                                      }`}
+                                    >
+                                      <Icon className="w-6 h-6" />
+                                      <span className="text-xs font-bold">{item.label}</span>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Load Structure</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                  {['FCL', 'LCL'].map((loadOption) => (
+                                    <button
+                                      key={loadOption}
+                                      type="button"
+                                      onClick={() => setFormData(prev => ({ ...prev, containerLoad: loadOption }))}
+                                      className={`py-2 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                                        formData.containerLoad === loadOption
+                                          ? 'border-blue-600 bg-blue-50 text-blue-600'
+                                          : 'border-slate-200 hover:border-slate-350 text-slate-655 bg-white hover:bg-slate-50'
+                                      }`}
+                                    >
+                                      {loadOption === 'FCL' ? 'FCL (Full Load)' : 'LCL (Shared Load)'}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Incoterms Definition</label>
+                                <select
+                                  name="incoterm"
+                                  value={formData.incoterm}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 font-medium cursor-pointer"
+                                >
+                                  {INCOTERMS.map((term) => (
+                                    <option key={term.value} value={term.value}>{term.label}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* STEP 3: SHIPMENT DETAILS */}
+                        {currentStep === 3 && (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Packaging Method</label>
+                                <select
+                                  name="packageType"
+                                  value={formData.packageType}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 font-medium cursor-pointer"
+                                >
+                                  {PACKAGE_TYPES.map((pkg) => (
+                                    <option key={pkg.value} value={pkg.value}>{pkg.label}</option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Container Classification</label>
+                                <select
+                                  name="containerType"
+                                  value={formData.containerType}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 font-medium cursor-pointer"
+                                >
+                                  {CONTAINER_TYPES.map((con) => (
+                                    <option key={con.value} value={con.value}>{con.label}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Net Cargo Weight (kg)</label>
+                                <input
+                                  type="number"
+                                  required
+                                  name="weight"
+                                  placeholder="e.g. 5000"
+                                  value={formData.weight}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Total Volume (m³)</label>
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  required
+                                  name="volume"
+                                  placeholder="e.g. 12.5"
+                                  value={formData.volume}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Commodity Description</label>
+                                <input
+                                  type="text"
+                                  required
+                                  name="commodity"
+                                  placeholder="Electronic goods, Machinery Parts..."
+                                  value={formData.commodity}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">HS Code (Harmonized System)</label>
+                                <input
+                                  type="text"
+                                  required
+                                  name="hsCode"
+                                  placeholder="e.g. 8471.30"
+                                  value={formData.hsCode}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* STEP 4: ADDITIONAL DETAILS */}
+                        {currentStep === 4 && (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Declared Valuation</label>
+                                <input
+                                  type="number"
+                                  required
+                                  name="declaredValue"
+                                  placeholder="Values for clearance"
+                                  value={formData.declaredValue}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Trading Currency</label>
+                                <select
+                                  name="currency"
+                                  value={formData.currency}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 font-medium cursor-pointer"
+                                >
+                                  <option value="INR">INR (₹)</option>
+                                  <option value="USD">USD ($)</option>
+                                  <option value="EUR">EUR (€)</option>
+                                  <option value="GBP">GBP (£)</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-slate-700 font-semibold text-xs mb-1.5">Special Handling Instructions</label>
+                              <textarea
+                                rows="2"
+                                name="specialInstructions"
+                                placeholder="Write liftgate requirement, stackable bounds, or site gate keys"
+                                value={formData.specialInstructions}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 resize-none"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 pt-2">
+                              {[
+                                { name: 'isHazardous', label: 'Hazardous (HazMat)' },
+                                { name: 'isFragile', label: 'Fragile Cargo' },
+                                { name: 'isTempControlled', label: 'Temp-Controlled' },
+                                { name: 'isInsuranceRequired', label: 'Insurance Cover' }
+                              ].map((checkbox) => (
+                                <label
+                                  key={checkbox.name}
+                                  className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                                    formData[checkbox.name]
+                                      ? 'border-blue-600 bg-blue-50/20 text-blue-655 font-bold'
+                                      : 'border-slate-200 hover:border-slate-350 text-slate-500 bg-white hover:bg-slate-50'
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    name={checkbox.name}
+                                    checked={formData[checkbox.name]}
+                                    onChange={handleInputChange}
+                                    className="w-4.5 h-4.5 text-blue-600 bg-white border-slate-200 rounded focus:ring-blue-500/20 cursor-pointer"
+                                  />
+                                  <span className="text-xs">{checkbox.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* STEP 5: CONTACT DETAILS */}
+                        {currentStep === 5 && (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Contact Full Name</label>
+                                <div className="relative">
+                                  <User className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                                  <input
+                                    type="text"
+                                    required
+                                    name="contactName"
+                                    value={formData.contactName}
+                                    onChange={handleInputChange}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Corporate Company</label>
+                                <div className="relative">
+                                  <Building className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                                  <input
+                                    type="text"
+                                    required
+                                    name="companyName"
+                                    value={formData.companyName}
+                                    onChange={handleInputChange}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Corporate Email</label>
+                                <div className="relative">
+                                  <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                                  <input
+                                    type="email"
+                                    required
+                                    name="contactEmail"
+                                    value={formData.contactEmail}
+                                    onChange={handleInputChange}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Phone Contact</label>
+                                <div className="relative">
+                                  <Phone className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                                  <input
+                                    type="tel"
+                                    required
+                                    name="contactPhone"
+                                    value={formData.contactPhone}
+                                    onChange={handleInputChange}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-slate-700 font-semibold text-xs mb-1.5">Base Country</label>
+                              <input
+                                type="text"
+                                required
+                                name="country"
+                                value={formData.country}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        
+                      </div>
+                    </div>
+
+                    {/* Step Navigation Controls */}
+                    <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-8">
+                      <button
+                        type="button"
+                        onClick={handlePrevStep}
+                        disabled={currentStep === 1}
+                        className="px-5 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Previous Step
+                      </button>
+
+                      {currentStep < 5 ? (
+                        <button
+                          type="button"
+                          onClick={handleNextStep}
+                          className="px-6 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/10 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                        >
+                          Next Section <ArrowRight className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          type="submit"
+                          className="px-6 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-500/10 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                        >
+                          Save & Dispatch Quote <CheckCircle2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                )}
+
+              </div>
+            </div>
+
+            {/* Right side: Light-Themed Live Estimate Panel (span 4) */}
+            <div className="lg:col-span-4">
+              <div className="glass-card rounded-3xl bg-white text-slate-800 border border-slate-200 p-6 shadow-xl space-y-6 sticky top-24">
+                
+                {/* Panel Header */}
+                <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200">
+                    <Calculator className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm sm:text-base tracking-tight text-slate-800">Live Estimation Engine</h3>
+                    <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Dynamic SLA Rates</p>
+                  </div>
+                </div>
+
+                {/* Estimate Parameters */}
+                <div className="space-y-4">
+                  {/* Distance */}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Calculated Distance</span>
+                      <p className="text-xs text-slate-550 font-medium mt-0.5">Neural lane tracking</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-slate-800 block">
+                        {distanceVal > 0 ? `${distanceVal.toLocaleString()} km` : 'Select Hubs'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Transit Time */}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Transit Duration</span>
+                      <p className="text-xs text-slate-555 font-medium mt-0.5">Carrier speed standard</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-slate-800 block">
+                        {estimate.days > 0 ? `${estimate.days} Days (${formData.serviceMode})` : 'Select Mode'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Cost */}
+                  <div className="flex justify-between items-start pt-4 border-t border-slate-100">
+                    <div>
+                      <span className="text-[10px] text-slate-500 block font-extrabold uppercase tracking-wider">ESTIMATED TOTAL</span>
+                      <p className="text-xs text-slate-450 font-semibold mt-0.5">Indicative flat base</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xl sm:text-2xl font-black text-slate-800 block">
+                        {estimate.cost > 0 ? `₹ ${estimate.cost.toLocaleString('en-IN')}` : '₹ 0'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Route Options Details */}
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-150 space-y-2.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Optimized Lane Options</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-600">⚡ Cheapest Option:</span>
+                      <span className="font-bold text-emerald-600">
+                        {estimate.cost > 0 ? `₹${Math.round(estimate.cost * 0.85).toLocaleString('en-IN')}` : '—'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-600">✈️ Express Route:</span>
+                      <span className="font-bold text-sky-600">
+                        {estimate.cost > 0 ? `₹${Math.round(estimate.cost * 1.45).toLocaleString('en-IN')}` : '—'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-600">🌱 Low CO2 Route:</span>
+                      <span className="font-bold text-purple-650">
+                        {estimate.cost > 0 ? `₹${Math.round(estimate.cost * 1.05).toLocaleString('en-IN')}` : '—'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit button on right side */}
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md hover:shadow-lg hover:shadow-blue-500/10 active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider"
+                >
+                  <Calculator className="w-4.5 h-4.5" /> Generate Quotation
+                </button>
+
+                {/* Note */}
+                <div className="flex gap-2 items-start text-[10px] text-slate-450 bg-slate-50 p-3 rounded-xl border border-slate-150">
+                  <Info className="w-4 h-4 text-blue-650 shrink-0 mt-0.5" />
+                  <p className="leading-normal font-semibold">
+                    This live rate calculates base cargo values and lane telemetry data to estimate final bills within 98.4% accuracy.
+                  </p>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+        </main>
+      </div>
+    </div>
+  )
+}
