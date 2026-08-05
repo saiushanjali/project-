@@ -27,7 +27,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
       items: [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
         { name: 'New enquiry', path: '/dashboard/new-shipment', icon: PlusCircle },
-        { name: 'Shipments', path: '#shipments', icon: BarChart3, isMock: true },
+        { name: 'Shipments', path: '/dashboard/shipments', icon: BarChart3 },
         { name: 'Quotations', path: '/dashboard?tab=quotations', icon: FileText }
       ]
     }

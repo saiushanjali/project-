@@ -4,6 +4,7 @@ import LoginPage from './pages/Login'
 import RegisterPage from './pages/Register'
 import BrokerDashboard from './pages/BrokerDashboard'
 import NewShipmentEnquiry from './pages/NewShipmentEnquiry'
+import Shipments from './pages/Shipments'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/dashboard" element={<BrokerDashboard />} />
         <Route path="/dashboard/new-shipment" element={<NewShipmentEnquiry />} />
+        <Route path="/dashboard/shipments" element={<Shipments />} />
       </Routes>
     </Router>
   )

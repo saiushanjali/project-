@@ -20,7 +20,9 @@ import {
   Package,
   Layers,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  Trash2,
+  Plus
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
@@ -49,12 +51,29 @@ const INCOTERMS = [
 ]
 
 const PACKAGE_TYPES = [
-  { value: 'boxes', label: 'Boxes / Cartons' },
-  { value: 'pallets', label: 'Wooden Pallets' },
-  { value: 'crates', label: 'Crates' },
+  { value: 'container', label: 'Container' },
+  { value: 'pallets', label: 'Pallet' },
+  { value: 'boxes', label: 'Carton' },
+  { value: 'crates', label: 'Crate' },
   { value: 'drums', label: 'Drums / Barrels' },
   { value: 'rolls', label: 'Rolls / Spools' }
 ]
+
+const SHIPPING_METHODS = [
+  { value: 'FCL', label: 'FCL — Full container', color: 'orange' },
+  { value: 'LCL', label: 'LCL — Consolidated', color: 'blue' },
+  { value: 'FOB', label: 'FOB — Free On Board', color: 'slate' }
+]
+
+const WEIGHT_LIMITS = {
+  '20gp': { max: 18000, label: "20' GP" },
+  '40gp': { max: 26000, label: "40' GP" },
+  '40hc': { max: 26480, label: "40' HC" },
+  '20rf': { max: 17000, label: "20' Reefer" },
+  '40rf': { max: 25000, label: "40' Reefer" },
+  'lcl': { max: 20000, label: 'LCL' },
+  'none': { max: 50000, label: 'Bulk' }
+}
 
 const CONTAINER_TYPES = [
   { value: '20gp', label: "20' General Purpose (FCL)" },
@@ -113,12 +132,25 @@ export default function NewShipmentEnquiry() {
     incoterm: 'CIF',
 
     // Step 3 - Shipment Details
-    packageType: 'pallets',
-    containerType: '40gp',
-    weight: '2500', // kg
-    volume: '8.5', // m3
-    commodity: 'Industrial Machining Parts',
-    hsCode: '8479.90',
+    shippingMethod: 'FCL',
+    items: [
+      {
+        id: 1,
+        packageType: 'container',
+        containerType: '40hc',
+        unitCount: '1',
+        weight: '18400',
+        commodity: 'Cotton textile rolls, unbleached',
+        hsCode: '5208.11'
+      }
+    ],
+    // Keep legacy fields for estimate calculation
+    packageType: 'container',
+    containerType: '40hc',
+    weight: '18400',
+    volume: '8.5',
+    commodity: 'Cotton textile rolls, unbleached',
+    hsCode: '5208.11',
 
     // Step 4 - Additional Details
     declaredValue: '3500000', // INR
@@ -150,6 +182,58 @@ export default function NewShipmentEnquiry() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }))
+  }
+
+  // Multi-item cargo handlers
+  const handleAddItem = () => {
+    setFormData((prev) => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        {
+          id: Date.now(),
+          packageType: 'container',
+          containerType: '40hc',
+          unitCount: '1',
+          weight: '',
+          commodity: '',
+          hsCode: ''
+        }
+      ]
+    }))
+  }
+
+  const handleRemoveItem = (itemId) => {
+    setFormData((prev) => {
+      const newItems = prev.items.filter(item => item.id !== itemId)
+      // Update legacy weight field to total of all items
+      const totalWeight = newItems.reduce((sum, item) => sum + (parseFloat(item.weight) || 0), 0)
+      return {
+        ...prev,
+        items: newItems,
+        weight: String(totalWeight)
+      }
+    })
+  }
+
+  const handleItemChange = (itemId, field, value) => {
+    setFormData((prev) => {
+      const newItems = prev.items.map(item =>
+        item.id === itemId ? { ...item, [field]: value } : item
+      )
+      // Sync legacy fields with first item / totals
+      const totalWeight = newItems.reduce((sum, item) => sum + (parseFloat(item.weight) || 0), 0)
+      const firstItem = newItems[0] || {}
+      return {
+        ...prev,
+        items: newItems,
+        weight: String(totalWeight),
+        commodity: firstItem.commodity || prev.commodity,
+        hsCode: firstItem.hsCode || prev.hsCode,
+        packageType: firstItem.packageType || prev.packageType,
+        containerType: firstItem.containerType || prev.containerType
+      }
+    })
   }
 
   // Calculate coordinates & live values
@@ -582,93 +666,176 @@ export default function NewShipmentEnquiry() {
 
                         {/* STEP 3: SHIPMENT DETAILS */}
                         {currentStep === 3 && (
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Packaging Method</label>
-                                <select
-                                  name="packageType"
-                                  value={formData.packageType}
-                                  onChange={handleInputChange}
-                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 font-medium cursor-pointer"
-                                >
-                                  {PACKAGE_TYPES.map((pkg) => (
-                                    <option key={pkg.value} value={pkg.value}>{pkg.label}</option>
-                                  ))}
-                                </select>
+                          <div className="space-y-5">
+                            {/* Shipping Method Tabs */}
+                            <div>
+                              <div className="flex flex-wrap gap-2 mb-1">
+                                {SHIPPING_METHODS.map((method) => (
+                                  <button
+                                    key={method.value}
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, shippingMethod: method.value }))}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                                      formData.shippingMethod === method.value
+                                        ? method.value === 'FCL'
+                                          ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20'
+                                          : method.value === 'LCL'
+                                            ? 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-500/20'
+                                            : 'bg-slate-700 text-white border-slate-700 shadow-md shadow-slate-500/20'
+                                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    {method.label}
+                                    {formData.shippingMethod === method.value && (
+                                      <span className="ml-1.5 bg-white/25 text-[9px] px-1.5 py-0.5 rounded-md font-extrabold">ACTIVE</span>
+                                    )}
+                                  </button>
+                                ))}
                               </div>
-
-                              <div>
-                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Container Classification</label>
-                                <select
-                                  name="containerType"
-                                  value={formData.containerType}
-                                  onChange={handleInputChange}
-                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 font-medium cursor-pointer"
-                                >
-                                  {CONTAINER_TYPES.map((con) => (
-                                    <option key={con.value} value={con.value}>{con.label}</option>
-                                  ))}
-                                </select>
-                              </div>
+                              <p className="text-[10px] text-slate-400 font-medium mt-1">Decide which cost leg basis in the quote.</p>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Net Cargo Weight (kg)</label>
-                                <input
-                                  type="number"
-                                  required
-                                  name="weight"
-                                  placeholder="e.g. 5000"
-                                  value={formData.weight}
-                                  onChange={handleInputChange}
-                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
-                                />
-                              </div>
+                            {/* Cargo Items */}
+                            {formData.items.map((item, index) => {
+                              const weightLimit = WEIGHT_LIMITS[item.containerType] || WEIGHT_LIMITS['40hc']
+                              const currentWeight = parseFloat(item.weight) || 0
+                              const isOverweight = currentWeight > weightLimit.max
 
-                              <div>
-                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Total Volume (m³)</label>
-                                <input
-                                  type="number"
-                                  step="0.1"
-                                  required
-                                  name="volume"
-                                  placeholder="e.g. 12.5"
-                                  value={formData.volume}
-                                  onChange={handleInputChange}
-                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
-                                />
-                              </div>
-                            </div>
+                              return (
+                                <div key={item.id} className="relative bg-slate-50/50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                                  {/* Item Header */}
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                        <Package className="w-3.5 h-3.5" />
+                                      </div>
+                                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Item {index + 1}</span>
+                                    </div>
+                                    {formData.items.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveItem(item.id)}
+                                        className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" /> Remove
+                                      </button>
+                                    )}
+                                  </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Commodity Description</label>
-                                <input
-                                  type="text"
-                                  required
-                                  name="commodity"
-                                  placeholder="Electronic goods, Machinery Parts..."
-                                  value={formData.commodity}
-                                  onChange={handleInputChange}
-                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
-                                />
-                              </div>
+                                  {/* Package Type + Container Type Row */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="block text-slate-700 font-semibold text-xs mb-1.5">
+                                        Package type <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-md font-bold ml-1">REQ</span>
+                                      </label>
+                                      <select
+                                        value={item.packageType}
+                                        onChange={(e) => handleItemChange(item.id, 'packageType', e.target.value)}
+                                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-medium cursor-pointer appearance-none"
+                                      >
+                                        {PACKAGE_TYPES.map((pkg) => (
+                                          <option key={pkg.value} value={pkg.value}>{pkg.label}</option>
+                                        ))}
+                                      </select>
+                                    </div>
 
-                              <div>
-                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">HS Code (Harmonized System)</label>
-                                <input
-                                  type="text"
-                                  required
-                                  name="hsCode"
-                                  placeholder="e.g. 8471.30"
-                                  value={formData.hsCode}
-                                  onChange={handleInputChange}
-                                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
-                                />
-                              </div>
-                            </div>
+                                    <div>
+                                      <label className="block text-slate-700 font-semibold text-xs mb-1.5">
+                                        Container type <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-md font-bold ml-1">REQ</span>
+                                      </label>
+                                      <select
+                                        value={item.containerType}
+                                        onChange={(e) => handleItemChange(item.id, 'containerType', e.target.value)}
+                                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-medium cursor-pointer appearance-none"
+                                      >
+                                        {CONTAINER_TYPES.map((con) => (
+                                          <option key={con.value} value={con.value}>{con.label}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </div>
+
+                                  {/* Unit Count + Weight Row */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="block text-slate-700 font-semibold text-xs mb-1.5">Unit per item</label>
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        value={item.unitCount}
+                                        onChange={(e) => handleItemChange(item.id, 'unitCount', e.target.value)}
+                                        placeholder="e.g. 1"
+                                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-slate-700 font-semibold text-xs mb-1.5">
+                                        Total gross weight (kg) <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-md font-bold ml-1">REQ</span>
+                                      </label>
+                                      <input
+                                        type="number"
+                                        required
+                                        value={item.weight}
+                                        onChange={(e) => handleItemChange(item.id, 'weight', e.target.value)}
+                                        placeholder="e.g. 18400"
+                                        className={`w-full px-4 py-2.5 bg-white border rounded-xl text-xs text-slate-800 focus:outline-none ${
+                                          isOverweight ? 'border-red-400 focus:border-red-500 bg-red-50/30' : 'border-slate-200 focus:border-blue-500'
+                                        }`}
+                                      />
+                                      <p className={`text-[10px] mt-1 font-medium ${
+                                        isOverweight ? 'text-red-500' : 'text-slate-400'
+                                      }`}>
+                                        {isOverweight
+                                          ? `⚠ Exceeds max ${weightLimit.max.toLocaleString()} kg for ${weightLimit.label}`
+                                          : `Limit for ${weightLimit.label} = ${weightLimit.max.toLocaleString()} kg`
+                                        }
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Commodity + HS Code Row */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="block text-slate-700 font-semibold text-xs mb-1.5">
+                                        Commodity description <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-md font-bold ml-1">REQ</span>
+                                      </label>
+                                      <input
+                                        type="text"
+                                        required
+                                        value={item.commodity}
+                                        onChange={(e) => handleItemChange(item.id, 'commodity', e.target.value)}
+                                        placeholder="e.g. Cotton textile rolls, unbleached"
+                                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                                      />
+                                      <p className="text-[10px] text-slate-400 font-medium mt-1 italic">*General cargo is rejected — customs-grade specifics</p>
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-slate-700 font-semibold text-xs mb-1.5">
+                                        HS code (suggested) <span className="text-[9px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-md font-bold ml-1">AUTO</span>
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={item.hsCode}
+                                        onChange={(e) => handleItemChange(item.id, 'hsCode', e.target.value)}
+                                        placeholder="e.g. 5208.11"
+                                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+
+                            {/* Add Another Item Button */}
+                            <button
+                              type="button"
+                              onClick={handleAddItem}
+                              className="w-full py-3 border-2 border-dashed border-slate-250 hover:border-blue-400 rounded-2xl text-xs font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50/30 transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                              <Plus className="w-4 h-4" /> Add another item
+                            </button>
                           </div>
                         )}
 
