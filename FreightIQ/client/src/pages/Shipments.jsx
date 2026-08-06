@@ -75,8 +75,8 @@ const CURRENCIES = [
 const SAMPLE_SHIPMENTS = [
   {
     id: 'SH-4021',
-    origin: 'Maharashtra (Mumbai Port)',
-    destination: 'Delhi NCT (ICD Tughlakabad)',
+    origin: 'Maharashtra',
+    destination: 'Delhi NCT',
     mode: 'Road',
     status: 'In Transit',
     date: 'Aug 04, 2026',
@@ -90,8 +90,8 @@ const SAMPLE_SHIPMENTS = [
   },
   {
     id: 'SH-4020',
-    origin: 'Gujarat (Mundra Port)',
-    destination: 'Tamil Nadu (Chennai Port)',
+    origin: 'Gujarat',
+    destination: 'Tamil Nadu',
     mode: 'Ocean',
     status: 'Delivered',
     date: 'Aug 02, 2026',
@@ -106,8 +106,8 @@ const SAMPLE_SHIPMENTS = [
   },
   {
     id: 'SH-4019',
-    origin: 'Karnataka (Bengaluru Terminal)',
-    destination: 'Kerala (Cochin Port)',
+    origin: 'Karnataka',
+    destination: 'Kerala',
     mode: 'Rail',
     status: 'Pending Pickup',
     date: 'Aug 01, 2026',
@@ -121,8 +121,8 @@ const SAMPLE_SHIPMENTS = [
   },
   {
     id: 'SH-4018',
-    origin: 'West Bengal (Kolkata Port)',
-    destination: 'Telangana (Hyderabad Hub)',
+    origin: 'West Bengal',
+    destination: 'Telangana',
     mode: 'Air',
     status: 'Customs Hold',
     date: 'Jul 30, 2026',

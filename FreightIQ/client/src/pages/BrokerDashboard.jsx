@@ -31,8 +31,8 @@ import DashboardCard from '../components/DashboardCard'
 const INITIAL_QUOTES = [
   {
     id: 'IQ-9821',
-    origin: 'Maharashtra (Mumbai Port)',
-    destination: 'Delhi NCT (ICD Tughlakabad)',
+    origin: 'Maharashtra',
+    destination: 'Delhi NCT',
     mode: 'Road',
     cost: '₹1,06,400',
     status: 'Approved',
@@ -41,8 +41,8 @@ const INITIAL_QUOTES = [
   },
   {
     id: 'IQ-9820',
-    origin: 'Gujarat (Mundra Port)',
-    destination: 'Tamil Nadu (Chennai Port)',
+    origin: 'Gujarat',
+    destination: 'Tamil Nadu',
     mode: 'Ocean',
     cost: '₹2,15,000',
     status: 'Pending Approval',
@@ -51,8 +51,8 @@ const INITIAL_QUOTES = [
   },
   {
     id: 'IQ-9819',
-    origin: 'Karnataka (Bengaluru Terminal)',
-    destination: 'Delhi NCT (ICD Tughlakabad)',
+    origin: 'Karnataka',
+    destination: 'Delhi NCT',
     mode: 'Air',
     cost: '₹3,45,000',
     status: 'Booking Confirmed',
@@ -61,8 +61,8 @@ const INITIAL_QUOTES = [
   },
   {
     id: 'IQ-9818',
-    origin: 'West Bengal (Kolkata Port)',
-    destination: 'Telangana (Hyderabad Hub)',
+    origin: 'West Bengal',
+    destination: 'Telangana',
     mode: 'Rail',
     cost: '₹89,000',
     status: 'Draft',
@@ -79,16 +79,16 @@ const INITIAL_ACTIVITIES = [
 ]
 
 const HUB_CODES = {
-  'Maharashtra (Mumbai Port)': { code: 'INNSA', name: 'Mumbai' },
-  'Gujarat (Mundra Port)': { code: 'INMUN', name: 'Mundra' },
-  'Tamil Nadu (Chennai Port)': { code: 'INMAA', name: 'Chennai' },
-  'West Bengal (Kolkata Port)': { code: 'INCCU', name: 'Kolkata' },
-  'Kerala (Cochin Port)': { code: 'INCOK', name: 'Cochin' },
-  'Delhi NCT (ICD Tughlakabad)': { code: 'INTKD', name: 'Delhi' },
-  'Karnataka (Bengaluru Terminal)': { code: 'INBLR', name: 'Bengaluru' },
-  'Telangana (Hyderabad Hub)': { code: 'INHYD', name: 'Hyderabad' },
-  'Andhra Pradesh (Vizag Port)': { code: 'INVTZ', name: 'Vizag' },
-  'Goa (Marmagao Port)': { code: 'INMRM', name: 'Goa' },
+  'Maharashtra': { code: 'INNSA', name: 'Mumbai' },
+  'Gujarat': { code: 'INMUN', name: 'Mundra' },
+  'Tamil Nadu': { code: 'INMAA', name: 'Chennai' },
+  'West Bengal': { code: 'INCCU', name: 'Kolkata' },
+  'Kerala': { code: 'INCOK', name: 'Cochin' },
+  'Delhi NCT': { code: 'INTKD', name: 'Delhi' },
+  'Karnataka': { code: 'INBLR', name: 'Bengaluru' },
+  'Telangana': { code: 'INHYD', name: 'Hyderabad' },
+  'Andhra Pradesh': { code: 'INVTZ', name: 'Vizag' },
+  'Goa': { code: 'INMRM', name: 'Goa' },
   'Dubai': { code: 'AEJEA', name: 'Dubai' }
 }
 
@@ -166,7 +166,7 @@ export default function BrokerDashboard() {
     const selectedQuoteId = queryParams.get('quoteId')
     const currentQuote = quotes.find(q => q.id === selectedQuoteId) || quotes[0] || {
       id: 'QT-2026-00930',
-      origin: 'Maharashtra (Mumbai Port)',
+      origin: 'Maharashtra',
       destination: 'Dubai',
       cost: '₹3,84,500',
       status: 'Draft',

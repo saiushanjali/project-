@@ -21,22 +21,22 @@ const CARGO_TYPES = [
 ]
 
 const INDIAN_STATES_HUBS = [
-  { value: 'Maharashtra (Mumbai Port)', label: 'Maharashtra (Mumbai Port)' },
-  { value: 'Gujarat (Mundra Port)', label: 'Gujarat (Mundra Port)' },
-  { value: 'Tamil Nadu (Chennai Port)', label: 'Tamil Nadu (Chennai Port)' },
-  { value: 'West Bengal (Kolkata Port)', label: 'West Bengal (Kolkata Port)' },
-  { value: 'Kerala (Cochin Port)', label: 'Kerala (Cochin Port)' },
-  { value: 'Delhi NCT (ICD Tughlakabad)', label: 'Delhi NCT (ICD Tughlakabad)' },
-  { value: 'Karnataka (Bengaluru Terminal)', label: 'Karnataka (Bengaluru Terminal)' },
-  { value: 'Telangana (Hyderabad Hub)', label: 'Telangana (Hyderabad Hub)' },
-  { value: 'Andhra Pradesh (Vizag Port)', label: 'Andhra Pradesh (Vizag Port)' },
-  { value: 'Goa (Marmagao Port)', label: 'Goa (Marmagao Port)' }
+  { value: 'Maharashtra', label: 'Maharashtra' },
+  { value: 'Gujarat', label: 'Gujarat' },
+  { value: 'Tamil Nadu', label: 'Tamil Nadu' },
+  { value: 'West Bengal', label: 'West Bengal' },
+  { value: 'Kerala', label: 'Kerala' },
+  { value: 'Delhi NCT', label: 'Delhi NCT' },
+  { value: 'Karnataka', label: 'Karnataka' },
+  { value: 'Telangana', label: 'Telangana' },
+  { value: 'Andhra Pradesh', label: 'Andhra Pradesh' },
+  { value: 'Goa', label: 'Goa' }
 ]
 
 export default function QuoteForm() {
   const [formData, setFormData] = useState({
-    origin: 'Maharashtra (Mumbai Port)',
-    destination: 'Delhi NCT (ICD Tughlakabad)',
+    origin: 'Maharashtra',
+    destination: 'Delhi NCT',
     weight: '1250',
     volume: '4.2',
     cargoType: 'standard',
@@ -106,8 +106,8 @@ export default function QuoteForm() {
 
   const handleReset = () => {
     setFormData({
-      origin: 'Maharashtra (Mumbai Port)',
-      destination: 'Delhi NCT (ICD Tughlakabad)',
+      origin: 'Maharashtra',
+      destination: 'Delhi NCT',
       weight: '1250',
       volume: '4.2',
       cargoType: 'standard',

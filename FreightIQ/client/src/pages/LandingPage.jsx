@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
   Shield, 
@@ -20,7 +20,6 @@ import {
 
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import QuoteForm from '../components/QuoteForm'
 
 
 const features = [
@@ -88,6 +87,7 @@ const steps = [
 
 export default function LandingPage() {
   const [contactSubmitted, setContactSubmitted] = useState(false)
+  const navigate = useNavigate()
 
   const handleContactSubmit = (e) => {
     e.preventDefault()
@@ -100,8 +100,12 @@ export default function LandingPage() {
 
   const scrollToQuote = (e) => {
     e.preventDefault()
-    const el = document.querySelector('#quote-generator')
-    if (el) el.scrollIntoView({ behavior: 'smooth' })
+    const token = localStorage.getItem('token')
+    if (token) {
+      navigate('/dashboard/new-shipment')
+    } else {
+      navigate('/login')
+    }
   }
 
   const scrollToFeatures = (e) => {
@@ -199,9 +203,21 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Right Side: Embedded Quote Engine Card */}
-            <div id="quote-generator" className="lg:col-span-5 relative w-full">
-              <QuoteForm />
+            {/* Right Side: Professional Logistics Image */}
+            <div className="lg:col-span-5 relative w-full max-w-lg mx-auto">
+              <div className="absolute -inset-4 bg-gradient-to-tr from-blue-500/10 to-indigo-500/10 blur-3xl rounded-full" />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="relative z-10 p-3 bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-[32px] shadow-xl hover:shadow-2xl transition-all duration-500"
+              >
+                <img
+                  src="/logistics_hero.png"
+                  alt="Professional Global Logistics Routing"
+                  className="w-full h-auto rounded-[24px] object-cover"
+                />
+              </motion.div>
             </div>
           </div>
         </div>

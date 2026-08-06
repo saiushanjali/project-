@@ -29,16 +29,16 @@ import Sidebar from '../components/Sidebar'
 import DashboardNavbar from '../components/DashboardNavbar'
 
 const INDIAN_STATES_HUBS = [
-  { value: 'Maharashtra (Mumbai Port)', label: 'Maharashtra (Mumbai Port)', lat: 18.94, lng: 72.84 },
-  { value: 'Gujarat (Mundra Port)', label: 'Gujarat (Mundra Port)', lat: 22.84, lng: 69.70 },
-  { value: 'Tamil Nadu (Chennai Port)', label: 'Tamil Nadu (Chennai Port)', lat: 13.08, lng: 80.27 },
-  { value: 'West Bengal (Kolkata Port)', label: 'West Bengal (Kolkata Port)', lat: 22.57, lng: 88.36 },
-  { value: 'Kerala (Cochin Port)', label: 'Kerala (Cochin Port)', lat: 9.93, lng: 76.26 },
-  { value: 'Delhi NCT (ICD Tughlakabad)', label: 'Delhi NCT (ICD Tughlakabad)', lat: 28.53, lng: 77.26 },
-  { value: 'Karnataka (Bengaluru Terminal)', label: 'Karnataka (Bengaluru Terminal)', lat: 12.97, lng: 77.59 },
-  { value: 'Telangana (Hyderabad Hub)', label: 'Telangana (Hyderabad Hub)', lat: 17.38, lng: 78.48 },
-  { value: 'Andhra Pradesh (Vizag Port)', label: 'Andhra Pradesh (Vizag Port)', lat: 17.68, lng: 83.21 },
-  { value: 'Goa (Marmagao Port)', label: 'Goa (Marmagao Port)', lat: 15.40, lng: 73.80 }
+  { value: 'Maharashtra', label: 'Maharashtra', lat: 18.94, lng: 72.84 },
+  { value: 'Gujarat', label: 'Gujarat', lat: 22.84, lng: 69.70 },
+  { value: 'Tamil Nadu', label: 'Tamil Nadu', lat: 13.08, lng: 80.27 },
+  { value: 'West Bengal', label: 'West Bengal', lat: 22.57, lng: 88.36 },
+  { value: 'Kerala', label: 'Kerala', lat: 9.93, lng: 76.26 },
+  { value: 'Delhi NCT', label: 'Delhi NCT', lat: 28.53, lng: 77.26 },
+  { value: 'Karnataka', label: 'Karnataka', lat: 12.97, lng: 77.59 },
+  { value: 'Telangana', label: 'Telangana', lat: 17.38, lng: 78.48 },
+  { value: 'Andhra Pradesh', label: 'Andhra Pradesh', lat: 17.68, lng: 83.21 },
+  { value: 'Goa', label: 'Goa', lat: 15.40, lng: 73.80 }
 ]
 
 const INCOTERMS = [
@@ -86,16 +86,16 @@ const CONTAINER_TYPES = [
 ]
 
 const HUB_CODES = {
-  'Maharashtra (Mumbai Port)': { code: 'INNSA', name: 'Mumbai' },
-  'Gujarat (Mundra Port)': { code: 'INMUN', name: 'Mundra' },
-  'Tamil Nadu (Chennai Port)': { code: 'INMAA', name: 'Chennai' },
-  'West Bengal (Kolkata Port)': { code: 'INCCU', name: 'Kolkata' },
-  'Kerala (Cochin Port)': { code: 'INCOK', name: 'Cochin' },
-  'Delhi NCT (ICD Tughlakabad)': { code: 'INTKD', name: 'Delhi' },
-  'Karnataka (Bengaluru Terminal)': { code: 'INBLR', name: 'Bengaluru' },
-  'Telangana (Hyderabad Hub)': { code: 'INHYD', name: 'Hyderabad' },
-  'Andhra Pradesh (Vizag Port)': { code: 'INVTZ', name: 'Vizag' },
-  'Goa (Marmagao Port)': { code: 'INMRM', name: 'Goa' },
+  'Maharashtra': { code: 'INNSA', name: 'Mumbai' },
+  'Gujarat': { code: 'INMUN', name: 'Mundra' },
+  'Tamil Nadu': { code: 'INMAA', name: 'Chennai' },
+  'West Bengal': { code: 'INCCU', name: 'Kolkata' },
+  'Kerala': { code: 'INCOK', name: 'Cochin' },
+  'Delhi NCT': { code: 'INTKD', name: 'Delhi' },
+  'Karnataka': { code: 'INBLR', name: 'Bengaluru' },
+  'Telangana': { code: 'INHYD', name: 'Hyderabad' },
+  'Andhra Pradesh': { code: 'INVTZ', name: 'Vizag' },
+  'Goa': { code: 'INMRM', name: 'Goa' },
   'Dubai': { code: 'AEJEA', name: 'Dubai' }
 }
 
@@ -119,8 +119,8 @@ export default function NewShipmentEnquiry() {
   // Form State
   const [formData, setFormData] = useState({
     // Step 1 - Route
-    origin: 'Maharashtra (Mumbai Port)',
-    destination: 'Delhi NCT (ICD Tughlakabad)',
+    origin: 'Maharashtra',
+    destination: 'Delhi NCT',
     pickupAddress: '',
     deliveryAddress: '',
     readyDate: '',
