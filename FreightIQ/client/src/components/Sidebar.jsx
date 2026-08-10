@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
@@ -21,6 +22,26 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
   const navigate = useNavigate()
   const activePath = location.pathname
 
+  const [userEmail, setUserEmail] = useState('agent@freightiq.com')
+  const [userName, setUserName] = useState('Agent')
+
+  useEffect(() => {
+    const email = localStorage.getItem('userEmail') || 'agent@freightiq.com'
+    setUserEmail(email)
+    
+    const name = localStorage.getItem('userName')
+    if (name) {
+      setUserName(name)
+    } else {
+      const localPart = email.split('@')[0]
+      const cleanName = localPart
+        .split(/[\._\-+]/)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+      setUserName(cleanName || 'Agent')
+    }
+  }, [])
+
   const sections = [
     {
       title: 'WORKSPACE',
@@ -35,6 +56,8 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
 
   const handleLogout = () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('userEmail')
+    localStorage.removeItem('userName')
     navigate('/')
   }
 
@@ -111,12 +134,12 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
         {/* User Account State (if not collapsed) */}
         {!isCollapsed && (
           <div className="mx-2 p-3 bg-slate-50 rounded-xl border border-slate-150 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-200">
-              B
+            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-200 uppercase">
+              {userName.charAt(0) || 'U'}
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-bold text-slate-800 truncate">Broker Agent</p>
-              <span className="text-[10px] text-slate-500 block truncate">agent@freightiq.com</span>
+              <p className="text-xs font-bold text-slate-800 truncate">{userName}</p>
+              <span className="text-[10px] text-slate-500 block truncate">{userEmail}</span>
             </div>
           </div>
         )}

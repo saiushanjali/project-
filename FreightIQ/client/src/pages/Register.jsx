@@ -42,6 +42,11 @@ export default function RegisterPage() {
     setTimeout(() => {
       setIsLoading(false)
       setIsSuccess(true)
+      localStorage.setItem('registeredUser', JSON.stringify({
+        fullName: formData.fullName,
+        email: formData.email,
+        companyName: formData.companyName
+      }))
       setTimeout(() => {
         // Redirect to login page
         navigate('/login')

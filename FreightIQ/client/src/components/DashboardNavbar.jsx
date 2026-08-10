@@ -6,16 +6,30 @@ export default function DashboardNavbar({ setIsMobileOpen, title }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [userEmail, setUserEmail] = useState('agent@freightiq.com')
+  const [userName, setUserName] = useState('Agent')
   const navigate = useNavigate()
 
   useEffect(() => {
-    const email = localStorage.getItem('userEmail')
-    if (email) setUserEmail(email)
+    const email = localStorage.getItem('userEmail') || 'agent@freightiq.com'
+    setUserEmail(email)
+    
+    const name = localStorage.getItem('userName')
+    if (name) {
+      setUserName(name)
+    } else {
+      const localPart = email.split('@')[0]
+      const cleanName = localPart
+        .split(/[\._\-+]/)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+      setUserName(cleanName || 'Agent')
+    }
   }, [])
 
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('userEmail')
+    localStorage.removeItem('userName')
     navigate('/')
   }
 
@@ -104,11 +118,11 @@ export default function DashboardNavbar({ setIsMobileOpen, title }) {
             }}
             className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded-xl transition-colors text-left cursor-pointer"
           >
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center text-white font-extrabold text-xs shadow-md shadow-blue-500/10">
-              {userEmail.substring(0, 1).toUpperCase()}
+            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center text-white font-extrabold text-xs shadow-md shadow-blue-500/10 uppercase">
+              {userName.substring(0, 1).toUpperCase()}
             </div>
             <div className="hidden lg:block">
-              <p className="text-xs font-bold text-slate-800 leading-tight">Broker</p>
+              <p className="text-xs font-bold text-slate-800 leading-tight">{userName}</p>
               <span className="text-[9px] text-slate-500 block truncate max-w-[120px]">
                 {userEmail}
               </span>
@@ -119,7 +133,7 @@ export default function DashboardNavbar({ setIsMobileOpen, title }) {
           {profileOpen && (
             <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
               <div className="px-4 py-2 border-b border-slate-100">
-                <p className="text-xs font-bold text-slate-800">Connected Lane</p>
+                <p className="text-xs font-bold text-slate-800">{userName}</p>
                 <span className="text-[9px] text-slate-500 truncate block">{userEmail}</span>
               </div>
               <button

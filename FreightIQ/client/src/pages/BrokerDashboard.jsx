@@ -106,6 +106,7 @@ export default function BrokerDashboard() {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [quotes, setQuotes] = useState([])
   const [activities, setActivities] = useState(INITIAL_ACTIVITIES)
+  const [userName, setUserName] = useState('Agent')
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -119,6 +120,19 @@ export default function BrokerDashboard() {
     if (!token) {
       navigate('/login')
       return
+    }
+
+    const email = localStorage.getItem('userEmail') || 'agent@freightiq.com'
+    const name = localStorage.getItem('userName')
+    if (name) {
+      setUserName(name)
+    } else {
+      const localPart = email.split('@')[0]
+      const cleanName = localPart
+        .split(/[\._\-+]/)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+      setUserName(cleanName || 'Agent')
     }
 
     // Load quotes from localStorage (merge with initial mocks)
@@ -397,7 +411,7 @@ export default function BrokerDashboard() {
 
       {/* Main workspace */}
       <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
-        <DashboardNavbar setIsMobileOpen={setIsMobileOpen} title="Broker Dashboard" />
+        <DashboardNavbar setIsMobileOpen={setIsMobileOpen} title="Client Dashboard" />
 
         {/* Dashboard Content */}
         <main className="flex-grow p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto max-w-7xl w-full mx-auto">
@@ -412,7 +426,7 @@ export default function BrokerDashboard() {
                   <span className="px-2.5 py-0.5 text-[9px] font-semibold text-sky-400 bg-sky-500/10 border border-sky-400/20 rounded-full inline-flex items-center gap-1 uppercase tracking-wide">
                     <Sparkles className="w-2.5 h-2.5" /> Workspace Online
                   </span>
-                  <h2 className="text-xl sm:text-2xl font-black">Welcome Back, Dispatch Agent</h2>
+                  <h2 className="text-xl sm:text-2xl font-black">Welcome Back, {userName}</h2>
                   <p className="text-slate-400 text-xs font-medium">
                     Monitor logistics lanes, evaluate carbon indexes, and trigger multi-modal route dispatches.
                   </p>

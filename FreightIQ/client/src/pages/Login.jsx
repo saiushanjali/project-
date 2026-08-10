@@ -31,6 +31,30 @@ export default function LoginPage() {
       setIsSuccess(true)
       localStorage.setItem('token', 'mock-jwt-token')
       localStorage.setItem('userEmail', formData.email)
+      
+      const registeredStr = localStorage.getItem('registeredUser')
+      let foundName = ''
+      if (registeredStr) {
+        try {
+          const registered = JSON.parse(registeredStr)
+          if (registered.email.toLowerCase() === formData.email.toLowerCase()) {
+            foundName = registered.fullName
+          }
+        } catch (e) {
+          console.error(e)
+        }
+      }
+      
+      if (!foundName) {
+        const localPart = formData.email.split('@')[0]
+        foundName = localPart
+          .split(/[\._\-+]/)
+          .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+          .join(' ')
+      }
+      
+      localStorage.setItem('userName', foundName || 'Agent')
+
       setTimeout(() => {
         // Redirect to dashboard (simulated login)
         navigate('/dashboard')

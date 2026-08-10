@@ -119,8 +119,8 @@ export default function NewShipmentEnquiry() {
   // Form State
   const [formData, setFormData] = useState({
     // Step 1 - Route
-    origin: 'Maharashtra',
-    destination: 'Delhi NCT',
+    origin: '',
+    destination: '',
     pickupAddress: '',
     deliveryAddress: '',
     readyDate: '',
@@ -139,33 +139,33 @@ export default function NewShipmentEnquiry() {
         packageType: 'container',
         containerType: '40hc',
         unitCount: '1',
-        weight: '18400',
-        commodity: 'Cotton textile rolls, unbleached',
-        hsCode: '5208.11'
+        weight: '',
+        commodity: '',
+        hsCode: ''
       }
     ],
     // Keep legacy fields for estimate calculation
     packageType: 'container',
     containerType: '40hc',
-    weight: '18400',
-    volume: '8.5',
-    commodity: 'Cotton textile rolls, unbleached',
-    hsCode: '5208.11',
+    weight: '',
+    volume: '',
+    commodity: '',
+    hsCode: '',
 
     // Step 4 - Additional Details
-    declaredValue: '3500000', // INR
+    declaredValue: '', // INR
     currency: 'INR',
     specialInstructions: '',
     isHazardous: false,
     isFragile: false,
     isTempControlled: false,
-    isInsuranceRequired: true,
+    isInsuranceRequired: false,
 
     // Step 5 - Contact Details
-    contactName: 'Jane Doe',
-    companyName: 'Acme Manufacturing Corp',
-    contactEmail: 'j.doe@acmemfg.com',
-    contactPhone: '+91 (987) 654-3210',
+    contactName: '',
+    companyName: '',
+    contactEmail: '',
+    contactPhone: '',
     country: 'India'
   })
 
@@ -243,6 +243,7 @@ export default function NewShipmentEnquiry() {
   }
 
   const calculateDistance = () => {
+    if (!formData.origin || !formData.destination) return 0
     if (formData.origin === formData.destination) return 0
     const start = getCoordinates(formData.origin)
     const end = getCoordinates(formData.destination)
@@ -265,6 +266,22 @@ export default function NewShipmentEnquiry() {
   const calculateFreightEstimate = () => {
     if (distanceVal === 0) return { cost: 0, days: 0 }
     
+    // Transit time calculation based on distance and mode
+    let averageSpeed = 60 // km/h for road
+    if (formData.serviceMode === 'Air') averageSpeed = 750
+    if (formData.serviceMode === 'Ocean') averageSpeed = 22
+    if (formData.serviceMode === 'Rail') averageSpeed = 45
+
+    const hours = distanceVal / averageSpeed
+    let days = Math.ceil(hours / 10) // assuming 10 hrs travel time block per day
+    if (formData.serviceMode === 'Air') days = 1
+    if (formData.serviceMode === 'Ocean') days = Math.max(7, days)
+
+    const weightNum = parseFloat(formData.weight) || 0
+    if (weightNum === 0) {
+      return { cost: 0, days: days }
+    }
+
     let baseRate = 0
     let perKmRate = 0
 
@@ -287,7 +304,6 @@ export default function NewShipmentEnquiry() {
     }
 
     const distanceCost = distanceVal * perKmRate
-    const weightNum = parseFloat(formData.weight) || 0
     const weightCost = weightNum * 6.5 // ₹6.5 per kg
 
     let rawCost = baseRate + distanceCost + weightCost
@@ -297,17 +313,6 @@ export default function NewShipmentEnquiry() {
     if (formData.isTempControlled) rawCost *= 1.55
     if (formData.isFragile) rawCost *= 1.35
     if (formData.isInsuranceRequired) rawCost += 4500
-
-    // Transit time calculation based on distance and mode
-    let averageSpeed = 60 // km/h for road
-    if (formData.serviceMode === 'Air') averageSpeed = 750
-    if (formData.serviceMode === 'Ocean') averageSpeed = 22
-    if (formData.serviceMode === 'Rail') averageSpeed = 45
-
-    const hours = distanceVal / averageSpeed
-    let days = Math.ceil(hours / 10) // assuming 10 hrs travel time block per day
-    if (formData.serviceMode === 'Air') days = 1
-    if (formData.serviceMode === 'Ocean') days = Math.max(7, days)
 
     return {
       cost: Math.round(rawCost),
@@ -320,6 +325,10 @@ export default function NewShipmentEnquiry() {
   const handleNextStep = () => {
     // Validate Current Step
     if (currentStep === 1) {
+      if (!formData.origin || !formData.destination) {
+        alert('Please select both Origin and Destination hubs.')
+        return
+      }
       if (formData.origin === formData.destination) {
         alert('Origin and Destination cannot be the same hub.')
         return
@@ -507,6 +516,7 @@ export default function NewShipmentEnquiry() {
                                     onChange={handleInputChange}
                                     className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 appearance-none font-medium cursor-pointer"
                                   >
+                                    <option value="" disabled>Select Origin Hub</option>
                                     {INDIAN_STATES_HUBS.map((hub) => (
                                       <option key={hub.value} value={hub.value}>{hub.label}</option>
                                     ))}
@@ -524,6 +534,7 @@ export default function NewShipmentEnquiry() {
                                     onChange={handleInputChange}
                                     className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 appearance-none font-medium cursor-pointer"
                                   >
+                                    <option value="" disabled>Select Destination Hub</option>
                                     {INDIAN_STATES_HUBS.map((hub) => (
                                       <option key={hub.value} value={hub.value}>{hub.label}</option>
                                     ))}
