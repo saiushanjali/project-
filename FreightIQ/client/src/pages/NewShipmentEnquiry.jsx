@@ -116,6 +116,14 @@ export default function NewShipmentEnquiry() {
   const [newQuoteId, setNewQuoteId] = useState('')
   const navigate = useNavigate()
 
+  const todayStr = (() => {
+    const today = new Date()
+    const yyyy = today.getFullYear()
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const dd = String(today.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  })()
+
   // Form State
   const [formData, setFormData] = useState({
     // Step 1 - Route
@@ -178,10 +186,17 @@ export default function NewShipmentEnquiry() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }))
+    setFormData((prev) => {
+      const nextData = {
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }
+      // If readyDate is changed and deliveryDate is before the new readyDate, reset deliveryDate
+      if (name === 'readyDate' && nextData.deliveryDate && nextData.deliveryDate < value) {
+        nextData.deliveryDate = ''
+      }
+      return nextData
+    })
   }
 
   // Multi-item cargo handlers
@@ -335,6 +350,18 @@ export default function NewShipmentEnquiry() {
       }
       if (!formData.pickupAddress || !formData.deliveryAddress) {
         alert('Please fill out the pickup and delivery addresses.')
+        return
+      }
+      if (!formData.readyDate || !formData.deliveryDate) {
+        alert('Please select both Cargo Ready Date and Target Delivery Date.')
+        return
+      }
+      if (formData.readyDate < todayStr) {
+        alert('Cargo Ready Date cannot be in the past.')
+        return
+      }
+      if (formData.deliveryDate < formData.readyDate) {
+        alert('Target Delivery Date cannot be before the Cargo Ready Date.')
         return
       }
     }
@@ -582,6 +609,7 @@ export default function NewShipmentEnquiry() {
                                     name="readyDate"
                                     value={formData.readyDate}
                                     onChange={handleInputChange}
+                                    min={todayStr}
                                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer"
                                   />
                                 </div>
@@ -597,6 +625,7 @@ export default function NewShipmentEnquiry() {
                                     name="deliveryDate"
                                     value={formData.deliveryDate}
                                     onChange={handleInputChange}
+                                    min={formData.readyDate || todayStr}
                                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer"
                                   />
                                 </div>
