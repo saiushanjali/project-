@@ -5,6 +5,7 @@ import RegisterPage from './pages/Register'
 import BrokerDashboard from './pages/BrokerDashboard'
 import NewShipmentEnquiry from './pages/NewShipmentEnquiry'
 import Shipments from './pages/Shipments'
+import MasterData from './pages/MasterData'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/dashboard" element={<BrokerDashboard />} />
         <Route path="/dashboard/new-shipment" element={<NewShipmentEnquiry />} />
         <Route path="/dashboard/shipments" element={<Shipments />} />
+        <Route path="/dashboard/master-data" element={<MasterData />} />
       </Routes>
     </Router>
   )

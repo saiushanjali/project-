@@ -51,6 +51,12 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
         { name: 'Shipments', path: '/dashboard/shipments', icon: BarChart3 },
         { name: 'Quotations', path: '/dashboard?tab=quotations', icon: FileText }
       ]
+    },
+    {
+      title: 'ADMINISTRATION',
+      items: [
+        { name: 'Master Data', path: '/dashboard/master-data', icon: Database }
+      ]
     }
   ]
 
