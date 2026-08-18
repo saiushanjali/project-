@@ -326,6 +326,12 @@ export default function MasterData() {
       return;
     }
 
+    const role = localStorage.getItem('userRole');
+    if (role !== 'admin') {
+      navigate('/dashboard');
+      return;
+    }
+
     const loadedData = {};
     COLLECTIONS_CONFIG.forEach((col) => {
       loadedData[col.id] = db.getItems(col.id);

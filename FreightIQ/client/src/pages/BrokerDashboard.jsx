@@ -107,6 +107,7 @@ export default function BrokerDashboard() {
   const [quotes, setQuotes] = useState([])
   const [activities, setActivities] = useState(INITIAL_ACTIVITIES)
   const [userName, setUserName] = useState('Agent')
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -172,10 +173,7 @@ export default function BrokerDashboard() {
         return <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">Pending Review</span>
       default:
         return <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-150 text-slate-700 border border-slate-350">Draft</span>
-    }
-  }
-
-  // Detailed Quote Route Options View
+     // Detailed Quote Route Options View
   const renderQuotationDetail = () => {
     const selectedQuoteId = queryParams.get('quoteId')
     const currentQuote = quotes.find(q => q.id === selectedQuoteId) || quotes[0] || {
@@ -184,7 +182,8 @@ export default function BrokerDashboard() {
       destination: 'Dubai',
       cost: '₹3,84,500',
       status: 'Draft',
-      weight: '18,400 kg'
+      weight: '18,400 kg',
+      mode: 'Ocean'
     }
 
     const originInfo = getHubDetails(currentQuote.origin)
@@ -192,9 +191,87 @@ export default function BrokerDashboard() {
     
     // Parse cost for alternative options
     const baseCostNum = parseInt(currentQuote.cost.replace(/[^\d]/g, '')) || 384500
+    const mode = currentQuote.mode || 'Ocean'
+
+    // Interactive Route Options definition
+    const routeOptions = [
+      {
+        name: 'Direct Express Leg',
+        type: 'Fastest Route',
+        transitTime: mode.toLowerCase() === 'air' ? '1-2 Days' : '6-8 Days',
+        reliability: '94%',
+        congestion: 'Low',
+        emissions: 'High CO2',
+        score: 9.2,
+        cost: baseCostNum,
+        carrier: mode.toLowerCase() === 'air' ? 'FedEx Express' : 'Maersk Line',
+        pathD: 'M 80 120 Q 250 40 420 120',
+        color: '#f97316',
+        legend: 'Recommended -- direct',
+        timeline: [
+          { label: 'Origin Pickup', desc: 'Local cartage to port hub', val: '1.0 d' },
+          { label: 'Staging & Customs', desc: 'FCL clearance and loading', val: '1.5 d' },
+          { label: mode.toLowerCase() === 'air' ? 'Air Flight Transit' : 'Ocean Direct Vessel Transit', desc: 'Active shipping lane speed', val: mode.toLowerCase() === 'air' ? '0.5 d' : '3.0 d' },
+          { label: 'Destination Customs', desc: 'Import port clear', val: '1.0 d' },
+          { label: 'Final Delivery Leg', desc: 'Truck transport to warehouse', val: '0.5 d' }
+        ]
+      },
+      {
+        name: 'Transhipment Corridor',
+        type: 'Cheapest Route',
+        transitTime: mode.toLowerCase() === 'air' ? '3-4 Days' : '10-12 Days',
+        reliability: '85%',
+        congestion: 'Medium',
+        emissions: 'Medium CO2',
+        score: 8.1,
+        cost: Math.round(baseCostNum * 0.85),
+        carrier: mode.toLowerCase() === 'air' ? 'Emirates SkyCargo' : 'COSCO Shipping',
+        pathD: 'M 80 120 Q 250 120 420 120',
+        color: '#38bdf8',
+        legend: 'Alternative -- 1 transhipment',
+        timeline: [
+          { label: 'Origin Pickup', desc: 'Local cartage to port hub', val: '1.0 d' },
+          { label: 'Staging & Load staging', desc: 'LCL staging at warehouse', val: '2.5 d' },
+          { label: mode.toLowerCase() === 'air' ? 'Midpoint Hub Routing' : 'Ocean Transit (Transhipment)', desc: 'Routed via intermediate tranship hub', val: mode.toLowerCase() === 'air' ? '1.5 d' : '5.5 d' },
+          { label: 'Destination Customs', desc: 'Import port clear', val: '1.5 d' },
+          { label: 'Final Delivery Leg', desc: 'Truck transport to warehouse', val: '0.5 d' }
+        ]
+      },
+      {
+        name: 'Eco-Rail Combined',
+        type: 'Balanced ESG Route',
+        transitTime: mode.toLowerCase() === 'air' ? '4-5 Days' : '12-14 Days',
+        reliability: '89%',
+        congestion: 'Low',
+        emissions: 'Low CO2 (ESG Opt)',
+        score: 8.5,
+        cost: Math.round(baseCostNum * 0.92),
+        carrier: mode.toLowerCase() === 'air' ? 'DHL Express' : 'Ocean Network Express (ONE)',
+        pathD: 'M 80 120 Q 250 180 420 120',
+        color: '#10b981',
+        legend: 'Alternative -- direct, slower',
+        timeline: [
+          { label: 'Origin Pickup', desc: 'Electric truck cartage', val: '1.0 d' },
+          { label: 'Staging & Customs', desc: 'Eco-certified warehouse load', val: '1.5 d' },
+          { label: mode.toLowerCase() === 'air' ? 'Green Air Flight' : 'Green Vessel Transit (LNG)', desc: 'Carbon offset shipping lane', val: mode.toLowerCase() === 'air' ? '2.0 d' : '6.0 d' },
+          { label: 'Destination Customs', desc: 'Import port clear', val: '1.0 d' },
+          { label: 'Final Delivery Leg', desc: 'Electric truck dispatch', val: '0.5 d' }
+        ]
+      }
+    ]
+
+    const selectedRoute = routeOptions[selectedRouteIndex] || routeOptions[0]
+
+    // Predefined carrier comparison list
+    const carrierComparison = [
+      { logo: 'MSK', name: 'Maersk Line', mode: 'Ocean', time: '7 Days', reliability: '94%', rate: baseCostNum, score: '9.2', status: 'Recommended' },
+      { logo: 'COS', name: 'COSCO Shipping', mode: 'Ocean', time: '11 Days', reliability: '89%', rate: Math.round(baseCostNum * 0.85), score: '8.1', status: 'Cheapest' },
+      { logo: 'ONE', name: 'ONE Express', mode: 'Ocean', time: '9 Days', reliability: '91%', rate: Math.round(baseCostNum * 0.90), score: '8.7', status: 'Balanced' },
+      { logo: 'FED', name: 'FedEx Freight', mode: 'Air', time: '2 Days', reliability: '97%', rate: Math.round(baseCostNum * 2.3), score: '9.5', status: 'Express' }
+    ]
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 font-sans">
         {/* Header Breadcrumbs & Title */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
           <div>
@@ -208,7 +285,6 @@ export default function BrokerDashboard() {
               {getStatusBadge(currentQuote.status)}
             </div>
           </div>
-          {/* Note: Regenerate and Continue to Pricing buttons are REMOVED as requested */}
         </div>
 
         {/* Content Layout Grid */}
@@ -217,18 +293,50 @@ export default function BrokerDashboard() {
           {/* Left Column: Route options graph & Recommended Service (span 8) */}
           <div className="lg:col-span-8 space-y-6">
             
-            {/* Route Options Graph Card */}
+            {/* Interactive Route Options Selector */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-5">
+              <h3 className="font-extrabold text-slate-800 text-xs sm:text-sm tracking-tight mb-3">
+                Select Route Option -- ranked by composite SLA score
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {routeOptions.map((opt, idx) => (
+                  <button
+                    key={opt.name}
+                    type="button"
+                    onClick={() => setSelectedRouteIndex(idx)}
+                    className={`p-3 text-left rounded-xl border-2 transition-all flex flex-col justify-between h-24 cursor-pointer ${
+                      selectedRouteIndex === idx
+                        ? 'border-blue-600 bg-blue-50/30'
+                        : 'border-slate-200 hover:border-slate-350 bg-white hover:bg-slate-50'
+                    }`}
+                  >
+                    <div>
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{opt.type}</span>
+                      <span className="text-xs font-bold text-slate-800 block mt-0.5">{opt.name}</span>
+                    </div>
+                    <div className="flex justify-between items-center w-full mt-2">
+                      <span className="text-xs font-black text-blue-650">₹ {opt.cost.toLocaleString('en-IN')}</span>
+                      <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-150">
+                        Score {opt.score}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Dark Canvas SVG Route Visualizer */}
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
               <div className="flex justify-between items-center pb-2 border-b border-slate-100">
                 <div>
-                  <h3 className="font-extrabold text-slate-800 text-xs sm:text-sm tracking-tight">Route options -- ranked by composite score</h3>
+                  <h3 className="font-extrabold text-slate-850 text-xs sm:text-sm tracking-tight">Active Route Coordinates Map</h3>
+                  <p className="text-[10px] text-slate-500">Live shipping lane transit simulation</p>
                 </div>
                 <span className="text-[10px] text-emerald-650 font-black bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-150">
-                  3 viable routings
+                  {selectedRoute.emissions}
                 </span>
               </div>
 
-              {/* Dark Canvas SVG Route Visualizer */}
               <div className="bg-[#0c1524] rounded-2xl p-4 flex flex-col items-center justify-center relative overflow-hidden h-[240px] border border-slate-950">
                 {/* Decorative map dots in background */}
                 <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
@@ -239,133 +347,190 @@ export default function BrokerDashboard() {
                     <rect width="180" height="65" rx="6" fill="#0f172a" fillOpacity="0.8" stroke="#1e293b" strokeWidth="1" />
                     <g transform="translate(10, 15)">
                       <line x1="0" y1="0" x2="15" y2="0" stroke="#f97316" strokeWidth="2.5" />
-                      <text x="22" y="3" fill="#94a3b8" fontSize="8" fontWeight="bold">Recommended -- direct</text>
+                      <text x="22" y="3" fill="#94a3b8" fontSize="8" fontWeight="bold">Direct Route (Express)</text>
                     </g>
                     <g transform="translate(10, 30)">
                       <line x1="0" y1="0" x2="15" y2="0" stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="3,3" />
-                      <text x="22" y="3" fill="#94a3b8" fontSize="8" fontWeight="bold">Alternative -- 1 transhipment</text>
+                      <text x="22" y="3" fill="#94a3b8" fontSize="8" fontWeight="bold">Transhipment Route</text>
                     </g>
                     <g transform="translate(10, 45)">
-                      <line x1="0" y1="0" x2="15" y2="0" stroke="#475569" strokeWidth="1.5" strokeDasharray="2,2" />
-                      <text x="22" y="3" fill="#94a3b8" fontSize="8" fontWeight="bold">Alternative -- direct, slower</text>
+                      <line x1="0" y1="0" x2="15" y2="0" stroke="#10b981" strokeWidth="1.5" strokeDasharray="2,2" />
+                      <text x="22" y="3" fill="#94a3b8" fontSize="8" fontWeight="bold">Eco-Rail Combined</text>
                     </g>
                   </g>
 
                   {/* Ocean Route Arcs */}
-                  {/* Alt 2: Direct, slower */}
-                  <path d="M 80 120 Q 250 180 420 120" fill="none" stroke="#475569" strokeWidth="1.5" strokeDasharray="2,2" />
+                  {/* Option 3: Eco-Rail */}
+                  <path d="M 80 120 Q 250 180 420 120" fill="none" stroke="#10b981" strokeWidth={selectedRouteIndex === 2 ? 3.0 : 1.2} strokeDasharray={selectedRouteIndex === 2 ? "none" : "3,3"} />
                   
-                  {/* Alt 1: 1 transhipment */}
-                  <path d="M 80 120 Q 250 120 420 120" fill="none" stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="3,3" />
+                  {/* Option 2: Transhipment */}
+                  <path d="M 80 120 Q 250 120 420 120" fill="none" stroke="#38bdf8" strokeWidth={selectedRouteIndex === 1 ? 3.0 : 1.2} strokeDasharray={selectedRouteIndex === 1 ? "none" : "3,3"} />
                   
-                  {/* Recommended: Direct */}
-                  <path d="M 80 120 Q 250 40 420 120" fill="none" stroke="#f97316" strokeWidth="2.5" />
+                  {/* Option 1: Direct */}
+                  <path id="direct-path" d="M 80 120 Q 250 40 420 120" fill="none" stroke="#f97316" strokeWidth={selectedRouteIndex === 0 ? 3.0 : 1.2} strokeDasharray={selectedRouteIndex === 0 ? "none" : "3,3"} />
                   
+                  {/* Animating vessel/plane along selected path */}
+                  <circle r="6" fill={selectedRoute.color} className="shadow-lg shadow-white/40">
+                    <animateMotion dur="6s" repeatCount="indefinite" path={selectedRoute.pathD} />
+                  </circle>
+
                   {/* Port Nodes */}
                   <g transform="translate(80, 120)">
-                    <circle r="5" fill="#f97316" />
-                    <circle r="10" fill="none" stroke="#f97316" strokeWidth="1.5" strokeOpacity="0.4" />
-                    <text x="-12" y="4" fill="#e2e8f0" fontSize="9" fontWeight="black" textAnchor="end">{originInfo.code}</text>
+                    <circle r="6" fill={selectedRoute.color} />
+                    <circle r="12" fill="none" stroke={selectedRoute.color} strokeWidth="1.5" strokeOpacity="0.4" className="animate-ping" />
+                    <text x="-12" y="4" fill="#e2e8f0" fontSize="9" fontWeight="black" textAnchor="end">{originInfo.code || 'Origin'}</text>
                     <text x="-12" y="14" fill="#94a3b8" fontSize="7" fontWeight="medium" textAnchor="end">{originInfo.name}</text>
                   </g>
                   
                   <g transform="translate(420, 120)">
-                    <circle r="5" fill="#3b82f6" />
-                    <circle r="10" fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeOpacity="0.4" />
-                    <text x="12" y="4" fill="#e2e8f0" fontSize="9" fontWeight="black" textAnchor="start">{destInfo.code}</text>
+                    <circle r="6" fill="#3b82f6" />
+                    <circle r="12" fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeOpacity="0.4" />
+                    <text x="12" y="4" fill="#e2e8f0" fontSize="9" fontWeight="black" textAnchor="start">{destInfo.code || 'Dest'}</text>
                     <text x="12" y="14" fill="#94a3b8" fontSize="7" fontWeight="medium" textAnchor="start">{destInfo.name}</text>
                   </g>
 
-                  {/* Midpoint vessel */}
-                  <g transform="translate(250, 80)">
-                    <circle r="4" fill="#f97316" />
-                    <text y="-8" fill="#94a3b8" fontSize="8" fontWeight="extrabold" textAnchor="middle">
-                      {currentQuote.mode?.toLowerCase() === 'air' ? 'AE3AF' : 'AE3EA'}
-                    </text>
-                    <text y="15" fill="#475569" fontSize="7" fontWeight="bold" textAnchor="middle">
-                      {currentQuote.mode?.toLowerCase() === 'air' ? 'FLIGHT ROUTE' : 'VESSEL TRANSIT'}
+                  {/* Midpoint Info Box */}
+                  <g transform="translate(250, 75)">
+                    <rect x="-45" y="-12" width="90" height="24" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1" />
+                    <text y="3" fill="#e2e8f0" fontSize="8" fontWeight="bold" textAnchor="middle">
+                      {mode.toUpperCase()} LANE
                     </text>
                   </g>
                 </svg>
               </div>
             </div>
 
-            {/* Recommended Service Summary Card */}
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 sm:p-6 space-y-5">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-slate-100">
-                <div>
-                  <span className="px-2 py-0.5 text-[9px] font-black text-orange-700 bg-orange-50 border border-orange-200 rounded uppercase tracking-wider">
-                    RECOMMENDED
-                  </span>
-                  <h4 className="text-sm font-extrabold text-slate-850 mt-1">
-                    {currentQuote.mode?.toLowerCase() === 'air' ? 'FedEx -- Cargo Express' : 'Maersk -- MECL Service'}
-                  </h4>
-                  <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                    Direct -- weekly {currentQuote.mode?.toLowerCase() === 'air' ? 'flight' : 'sailing'} -- reliability 94% <span className="text-slate-355">|</span> {currentQuote.mode?.toLowerCase() === 'air' ? 'Air Telemetry' : '1,205 nm -- 3 d sailing'}
-                  </p>
-                </div>
-                <div className="text-left sm:text-right">
-                  <span className="text-xl font-black text-slate-850">{currentQuote.cost}</span>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Indicative flat rate</p>
+            {/* Carrier Comparison Table */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
+              <div className="pb-3 border-b border-slate-100 flex justify-between items-center">
+                <h3 className="font-extrabold text-slate-850 text-xs sm:text-sm tracking-tight">Active Carrier Comparison</h3>
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Spot Contract Quotes</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-100 text-xs font-sans">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-505 uppercase text-[9px] font-extrabold">
+                      <th className="px-4 py-2 text-left">Carrier</th>
+                      <th className="px-4 py-2 text-left">Transit</th>
+                      <th className="px-4 py-2 text-left">Reliability</th>
+                      <th className="px-4 py-2 text-left">Spot Rate</th>
+                      <th className="px-4 py-2 text-left">SLA Score</th>
+                      <th className="px-4 py-2 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {carrierComparison.map((carrier) => (
+                      <tr key={carrier.name} className="hover:bg-slate-50/50">
+                        <td className="px-4 py-3 flex items-center gap-2">
+                          <div className="w-7 h-7 rounded bg-blue-50 text-blue-600 flex items-center justify-center font-black text-[9px] border border-blue-200">
+                            {carrier.logo}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800">{carrier.name}</p>
+                            <span className="text-[9px] text-slate-500">{carrier.mode} Freight</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-slate-700">{carrier.time}</td>
+                        <td className="px-4 py-3 font-semibold text-slate-700">{carrier.reliability}</td>
+                        <td className="px-4 py-3 font-black text-slate-900">₹ {carrier.rate.toLocaleString('en-IN')}</td>
+                        <td className="px-4 py-3">
+                          <span className="font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-150">
+                            {carrier.score}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                            carrier.status === 'Recommended' ? 'bg-orange-50 text-orange-700 border border-orange-150' :
+                            carrier.status === 'Cheapest' ? 'bg-emerald-50 text-emerald-700 border border-emerald-150' : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {carrier.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right Column: Score, Timeline, Weight (span 4) */}
+          <div className="lg:col-span-4 space-y-6">
+            
+            {/* Composite SLA Route Score Card with Radial Progress */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 sm:p-6 space-y-4 flex flex-col items-center">
+              <div className="w-full pb-3 border-b border-slate-100">
+                <h3 className="font-extrabold text-slate-850 text-xs sm:text-sm tracking-tight text-left">Route Composite Score</h3>
+              </div>
+              
+              <div className="relative w-28 h-28 flex items-center justify-center">
+                {/* SVG Radial Gauge */}
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle cx="56" cy="56" r="46" stroke="#f1f5f9" strokeWidth="8" fill="none" />
+                  <circle 
+                    cx="56" 
+                    cy="56" 
+                    r="46" 
+                    stroke={selectedRoute.color} 
+                    strokeWidth="8" 
+                    fill="none" 
+                    strokeDasharray="289"
+                    strokeDashoffset={289 - (289 * (selectedRoute.score * 10)) / 100}
+                    strokeLinecap="round"
+                    className="transition-all duration-500"
+                  />
+                </svg>
+                <div className="absolute text-center">
+                  <span className="text-2xl font-black text-slate-800">{selectedRoute.score}</span>
+                  <span className="text-[10px] text-slate-500 block font-semibold">/ 10 Rating</span>
                 </div>
               </div>
 
-              {/* Progress Index Scores */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="text-center space-y-1">
+                <h4 className="text-xs font-bold text-slate-800">{selectedRoute.name}</h4>
+                <p className="text-[10px] text-slate-450 font-semibold uppercase">{selectedRoute.type}</p>
+              </div>
+
+              {/* Sub-Score parameters */}
+              <div className="w-full space-y-2 pt-2 border-t border-slate-100">
                 {[
-                  { label: 'Transit', score: 0.92 },
-                  { label: 'Cost', score: 0.70 },
-                  { label: 'Reliability', score: 0.94 },
-                  { label: 'Congestion', score: 0.71 }
-                ].map((metric) => (
-                  <div key={metric.label} className="space-y-1.5">
-                    <div className="flex justify-between items-center text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
-                      <span>{metric.label}</span>
-                      <span className="text-slate-850">{metric.score.toFixed(2)}</span>
+                  { label: 'Transit duration', val: selectedRoute.transitTime, pct: 90 },
+                  { label: 'Carrier reliability', val: selectedRoute.reliability, pct: parseFloat(selectedRoute.reliability) },
+                  { label: 'ESG / CO2 Index', val: selectedRoute.emissions, pct: selectedRouteIndex === 2 ? 95 : selectedRouteIndex === 1 ? 65 : 45 }
+                ].map((item) => (
+                  <div key={item.label} className="space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+                      <span>{item.label}</span>
+                      <span className="text-slate-800">{item.val}</span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-blue-600 rounded-full" 
-                        style={{ width: `${metric.score * 100}%` }}
-                      />
+                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-600 rounded-full" style={{ width: `${item.pct}%` }} />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-          </div>
-
-          {/* Right Column: Breakdowns (span 4) */}
-          <div className="lg:col-span-4 space-y-6">
-            
-            {/* Transit Breakdown */}
+            {/* Transit Time timeline */}
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
-              <div className="pb-3 border-b border-slate-100">
-                <h3 className="font-extrabold text-slate-850 text-xs sm:text-sm tracking-tight">Transit breakdown</h3>
+              <div className="pb-3 border-b border-slate-100 flex justify-between items-center">
+                <h3 className="font-extrabold text-slate-850 text-xs sm:text-sm tracking-tight">Transit Time breakdown</h3>
+                <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">{selectedRoute.transitTime}</span>
               </div>
 
-              <div className="space-y-3">
-                {[
-                  { label: 'Pickup leg (34 km road)', value: '1.0 d' },
-                  { label: 'Origin dwell -- FCL', value: '3.0 d' },
-                  { label: 'Sea leg -- 1,205 nm * 400', value: currentQuote.mode?.toLowerCase() === 'air' ? '0.5 d' : '3.0 d' },
-                  { label: 'Schedule wait (weekly) * 1', value: '3.5 d' },
-                  { label: 'Destination dwell', value: '3.0 d' },
-                  { label: 'Delivery leg', value: '0.0 d' }
-                ].map((item, i) => (
-                  <div key={i} className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500 font-semibold">{item.label}</span>
-                    <span className="text-slate-800 font-bold">{item.value}</span>
+              <div className="space-y-4 relative pl-4 border-l border-slate-200 ml-2 pt-1 font-sans">
+                {selectedRoute.timeline.map((step, i) => (
+                  <div key={step.label} className="relative space-y-0.5">
+                    {/* Circle marker on line */}
+                    <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-white border-2 border-blue-600" />
+                    <div className="flex justify-between items-start text-xs">
+                      <span className="font-bold text-slate-850">{step.label}</span>
+                      <span className="text-slate-500 font-extrabold">{step.val}</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 font-medium">{step.desc}</p>
                   </div>
                 ))}
-
-                <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
-                  <span className="text-xs font-black text-slate-800 uppercase">Total</span>
-                  <span className="text-xs font-black text-slate-800">
-                    {currentQuote.mode?.toLowerCase() === 'air' ? '11.0 -- 2-4 d *' : '13.5 -- 6-10 d *'}
-                  </span>
-                </div>
               </div>
             </div>
 
@@ -375,17 +540,16 @@ export default function BrokerDashboard() {
                 <h3 className="font-extrabold text-slate-850 text-xs sm:text-sm tracking-tight">Weight & charge basis</h3>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-3 font-sans text-xs">
                 {[
                   { label: 'Charge basis', value: 'PER_CONTAINER' },
-                  { label: 'Units', value: currentQuote.mode?.toLowerCase() === 'air' ? '1 * Palette' : '2 * 40HC' },
+                  { label: 'Units', value: mode.toLowerCase() === 'air' ? '1 * Pallet' : '2 * 40HC' },
                   { label: 'Gross weight', value: currentQuote.weight || '18,400 kg' },
                   { label: 'Payload limit', value: '28,000 kg' },
-                  { label: 'Volumetric', value: 'n/a -- FCL' },
-                  { label: 'Chargeable', value: 'n/a -- FCL' }
+                  { label: 'Volumetric basis', value: mode.toLowerCase() === 'air' ? '1:6000 Volumetric' : 'n/a -- FCL' }
                 ].map((item, i) => (
-                  <div key={i} className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500 font-semibold">{item.label}</span>
+                  <div key={i} className="flex justify-between items-center">
+                    <span className="text-slate-550 font-semibold">{item.label}</span>
                     <span className="text-slate-800 font-bold">{item.value}</span>
                   </div>
                 ))}

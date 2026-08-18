@@ -32,6 +32,16 @@ export default function LoginPage() {
       localStorage.setItem('token', 'mock-jwt-token')
       localStorage.setItem('userEmail', formData.email)
       
+      // Determine Role based on email
+      let role = 'user'
+      const emailLower = formData.email.toLowerCase()
+      if (emailLower.includes('admin')) {
+        role = 'admin'
+      } else if (emailLower.includes('broker')) {
+        role = 'broker'
+      }
+      localStorage.setItem('userRole', role)
+      
       const registeredStr = localStorage.getItem('registeredUser')
       let foundName = ''
       if (registeredStr) {
@@ -53,7 +63,7 @@ export default function LoginPage() {
           .join(' ')
       }
       
-      localStorage.setItem('userName', foundName || 'Agent')
+      localStorage.setItem('userName', foundName || (role === 'admin' ? 'System Admin' : role === 'broker' ? 'Lead Broker' : 'Shipper Agent'))
 
       setTimeout(() => {
         // Redirect to dashboard (simulated login)
@@ -161,7 +171,7 @@ export default function LoginPage() {
               </motion.div>
             ) : (
               <>
-                <div className="mb-8">
+                <div className="mb-6">
                   <span className="px-2.5 py-1 text-[10px] font-semibold text-blue-650 bg-blue-50 rounded-full border border-blue-200 inline-flex items-center gap-1 uppercase tracking-wider">
                     <Sparkles className="w-3 h-3 text-blue-600" /> Secure Access
                   </span>
@@ -171,6 +181,31 @@ export default function LoginPage() {
                   <p className="text-slate-500 text-xs sm:text-sm mt-1">
                     Enter credentials to manage active shipping operations.
                   </p>
+                </div>
+
+                {/* Quick Role Fill Selector */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-6 space-y-2">
+                  <span className="text-[9px] font-black text-slate-450 uppercase tracking-wider block">
+                    Quick Access Profiles (Simulation)
+                  </span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { role: 'Admin', email: 'admin@freightiq.com', pwd: 'adminpassword' },
+                      { role: 'Broker', email: 'broker@freightiq.com', pwd: 'brokerpassword' },
+                      { role: 'User', email: 'user@freightiq.com', pwd: 'userpassword' }
+                    ].map((p) => (
+                      <button
+                        key={p.role}
+                        type="button"
+                        onClick={() => {
+                          setFormData({ email: p.email, password: p.pwd, rememberMe: true });
+                        }}
+                        className="py-1.5 px-2 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-xl text-[10px] font-bold text-slate-700 hover:text-blue-600 transition-all cursor-pointer shadow-sm text-center"
+                      >
+                        {p.role} Profile
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">

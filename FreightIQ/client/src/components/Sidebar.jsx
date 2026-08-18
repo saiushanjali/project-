@@ -24,6 +24,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
 
   const [userEmail, setUserEmail] = useState('agent@freightiq.com')
   const [userName, setUserName] = useState('Agent')
+  const userRole = localStorage.getItem('userRole') || 'user'
 
   useEffect(() => {
     const email = localStorage.getItem('userEmail') || 'agent@freightiq.com'
@@ -42,23 +43,40 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
     }
   }, [])
 
-  const sections = [
-    {
-      title: 'WORKSPACE',
+  const sections = []
+  if (userRole === 'admin') {
+    sections.push({
+      title: 'ADMIN CONTROL',
       items: [
-        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { name: 'New enquiry', path: '/dashboard/new-shipment', icon: PlusCircle },
-        { name: 'Shipments', path: '/dashboard/shipments', icon: BarChart3 },
-        { name: 'Quotations', path: '/dashboard?tab=quotations', icon: FileText }
+        { name: 'Admin Dashboard', path: '/dashboard', icon: LayoutDashboard }
       ]
-    },
-    {
-      title: 'ADMINISTRATION',
+    })
+    sections.push({
+      title: 'DATA MANAGEMENT',
       items: [
         { name: 'Master Data', path: '/dashboard/master-data', icon: Database }
       ]
-    }
-  ]
+    })
+  } else if (userRole === 'broker') {
+    sections.push({
+      title: 'WORKSPACE',
+      items: [
+        { name: 'Broker Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'Shipments', path: '/dashboard/shipments', icon: BarChart3 },
+        { name: 'Quotations', path: '/dashboard?tab=quotations', icon: FileText }
+      ]
+    })
+  } else {
+    // Normal User / Shipper
+    sections.push({
+      title: 'WORKSPACE',
+      items: [
+        { name: 'Shipper Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'New enquiry', path: '/dashboard/new-shipment', icon: PlusCircle },
+        { name: 'Shipments', path: '/dashboard/shipments', icon: BarChart3 }
+      ]
+    })
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('token')

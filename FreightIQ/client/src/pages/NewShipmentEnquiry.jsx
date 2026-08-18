@@ -27,6 +27,7 @@ import {
 
 import Sidebar from '../components/Sidebar'
 import DashboardNavbar from '../components/DashboardNavbar'
+import * as db from '../utils/masterDataService'
 
 const INDIAN_STATES_HUBS = [
   { value: 'Maharashtra', label: 'Maharashtra', lat: 18.94, lng: 72.84 },
@@ -116,6 +117,15 @@ export default function NewShipmentEnquiry() {
   const [newQuoteId, setNewQuoteId] = useState('')
   const navigate = useNavigate()
 
+  const [originSearch, setOriginSearch] = useState('')
+  const [destSearch, setDestSearch] = useState('')
+  const [originSuggestions, setOriginSuggestions] = useState([])
+  const [destSuggestions, setDestSuggestions] = useState([])
+  const [showOriginSuggestions, setShowOriginSuggestions] = useState(false)
+  const [showDestSuggestions, setShowDestSuggestions] = useState(false)
+  const [isLoadingOrigin, setIsLoadingOrigin] = useState(false)
+  const [isLoadingDest, setIsLoadingDest] = useState(false)
+
   const todayStr = (() => {
     const today = new Date()
     const yyyy = today.getFullYear()
@@ -183,6 +193,103 @@ export default function NewShipmentEnquiry() {
       navigate('/login')
     }
   }, [navigate])
+
+  const handleGatewaySearch = async (query, type) => {
+    const isOrigin = type === 'origin'
+    const setSuggestions = isOrigin ? setOriginSuggestions : setDestSuggestions
+    const setIsLoadingSearch = isOrigin ? setIsLoadingOrigin : setIsLoadingDest
+
+    if (!query || query.trim().length < 1) {
+      setSuggestions([])
+      return
+    }
+
+    setIsLoadingSearch(true)
+    try {
+      const response = await fetch(`/api/v1/gateways/search?q=${encodeURIComponent(query)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setSuggestions(data)
+        setIsLoadingSearch(false)
+        return
+      }
+    } catch (e) {
+      console.warn('Real gateway search API failed, using master data fallback:', e)
+    }
+
+    // Fallback to local ports master data search
+    const ports = db.getItems('ports') || []
+    
+    const fallbackPorts = [
+      { UNLOCODE: 'INNSA', portName: 'Nhava Sheva (JNPT)', city: 'Mumbai', countryCode: 'IN' },
+      { UNLOCODE: 'USLAX', portName: 'Port of Los Angeles', city: 'Los Angeles', countryCode: 'US' },
+      { UNLOCODE: 'AEJEA', portName: 'Jebel Ali Port', city: 'Dubai', countryCode: 'AE' },
+      { UNLOCODE: 'DEHAM', portName: 'Port of Hamburg', city: 'Hamburg', countryCode: 'DE' },
+      { UNLOCODE: 'CNSHA', portName: 'Port of Shanghai', city: 'Shanghai', countryCode: 'CN' }
+    ]
+
+    const portsList = ports.length > 0 ? ports : fallbackPorts
+    const filtered = portsList.filter(port => 
+      port.portName.toLowerCase().includes(query.toLowerCase()) ||
+      port.UNLOCODE.toLowerCase().includes(query.toLowerCase()) ||
+      (port.city && port.city.toLowerCase().includes(query.toLowerCase()))
+    )
+    
+    setSuggestions(filtered)
+    setIsLoadingSearch(false)
+  }
+
+  const handleSelectGateway = (gateway, type) => {
+    const isOrigin = type === 'origin'
+    const code = gateway.UNLOCODE || gateway.code
+    setFormData(prev => ({
+      ...prev,
+      [type]: code
+    }))
+    if (isOrigin) {
+      setOriginSearch(`${gateway.portName || gateway.name} (${code})`)
+      setShowOriginSuggestions(false)
+    } else {
+      setDestSearch(`${gateway.portName || gateway.name} (${code})`)
+      setShowDestSuggestions(false)
+    }
+  }
+
+  const getChargeableWeightDetails = () => {
+    const actualWeight = parseFloat(formData.weight) || 0
+    const totalVolume = parseFloat(formData.volume) || 0
+    
+    if (formData.serviceMode === 'Air') {
+      const volWeight = totalVolume * 167
+      const chargeable = Math.max(actualWeight, volWeight)
+      const basis = chargeable === volWeight ? 'Volumetric (1:6000)' : 'Actual Weight'
+      return { weight: `${chargeable.toFixed(1)} kg`, basis: basis }
+    } else if (formData.serviceMode === 'Ocean' && formData.containerLoad === 'LCL') {
+      const volWeight = totalVolume * 1000
+      const chargeable = Math.max(actualWeight, volWeight)
+      const basis = chargeable === volWeight ? 'Volume CBM basis' : 'Actual Weight'
+      return { weight: `${chargeable.toFixed(1)} kg`, basis: basis }
+    } else if (formData.serviceMode === 'Ocean') {
+      return { weight: 'n/a', basis: 'FCL Container flat rate' }
+    } else {
+      const volWeight = totalVolume * 333
+      const chargeable = Math.max(actualWeight, volWeight)
+      const basis = chargeable === volWeight ? 'Volumetric (1:3000)' : 'Actual Weight'
+      return { weight: `${chargeable.toFixed(1)} kg`, basis: basis }
+    }
+  }
+
+  const getArrivalDateStr = () => {
+    if (!formData.readyDate) return 'Select Ready Date'
+    try {
+      const ready = new Date(formData.readyDate)
+      const transitDays = estimate.days || 3
+      ready.setDate(ready.getDate() + transitDays)
+      return ready.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+    } catch (e) {
+      return 'Select Ready Date'
+    }
+  }
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -253,6 +360,44 @@ export default function NewShipmentEnquiry() {
 
   // Calculate coordinates & live values
   const getCoordinates = (locationName) => {
+    if (!locationName) return { lat: 20, lng: 78 }
+
+    // Try finding in ports master data
+    const ports = db.getItems('ports') || []
+    const port = ports.find(p => p.UNLOCODE === locationName || p.portName === locationName)
+    if (port && port.location) {
+      try {
+        const parts = port.location.split(',')
+        if (parts.length === 2) {
+          const latPart = parts[0].trim()
+          const lngPart = parts[1].trim()
+          
+          let latVal = parseFloat(latPart)
+          let lngVal = parseFloat(lngPart)
+          
+          if (latPart.toLowerCase().includes('s')) latVal = -latVal
+          if (lngPart.toLowerCase().includes('w')) lngVal = -lngVal
+          
+          return { lat: latVal, lng: lngVal }
+        }
+      } catch (e) {
+        console.error('Error parsing port location coordinates:', e)
+      }
+    }
+
+    // Hardcoded UNLOCODE to coordinates mappings in case master data parsing fails
+    const portCoords = {
+      'INNSA': { lat: 18.9500, lng: 72.9500 },
+      'USLAX': { lat: 33.7288, lng: -118.2620 },
+      'AEJEA': { lat: 25.0112, lng: 55.0617 },
+      'DEHAM': { lat: 53.5458, lng: 9.9644 },
+      'CNSHA': { lat: 31.2243, lng: 121.4691 }
+    }
+    
+    if (portCoords[locationName]) {
+      return portCoords[locationName]
+    }
+
     const hub = INDIAN_STATES_HUBS.find(h => h.value === locationName)
     return hub ? { lat: hub.lat, lng: hub.lng } : { lat: 20, lng: 78 }
   }
@@ -358,6 +503,10 @@ export default function NewShipmentEnquiry() {
       }
       if (formData.readyDate < todayStr) {
         alert('Cargo Ready Date cannot be in the past.')
+        return
+      }
+      if (formData.deliveryDate < todayStr) {
+        alert('Target Delivery Date cannot be in the past.')
         return
       }
       if (formData.deliveryDate < formData.readyDate) {
@@ -532,40 +681,92 @@ export default function NewShipmentEnquiry() {
                         {/* STEP 1: ROUTE */}
                         {currentStep === 1 && (
                           <div className="space-y-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Origin State Hub</label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-sans">
+                              <div className="relative z-40">
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Origin Gateway (Search Port/Hub)</label>
                                 <div className="relative">
-                                  <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                                  <select
-                                    name="origin"
-                                    value={formData.origin}
-                                    onChange={handleInputChange}
-                                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 appearance-none font-medium cursor-pointer"
-                                  >
-                                    <option value="" disabled>Select Origin Hub</option>
-                                    {INDIAN_STATES_HUBS.map((hub) => (
-                                      <option key={hub.value} value={hub.value}>{hub.label}</option>
-                                    ))}
-                                  </select>
+                                  <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
+                                  <input
+                                    type="text"
+                                    placeholder="Type Port or UNLOCODE (e.g. Nhava, INNSA)"
+                                    value={originSearch}
+                                    onChange={(e) => {
+                                      setOriginSearch(e.target.value)
+                                      handleGatewaySearch(e.target.value, 'origin')
+                                      setShowOriginSuggestions(true)
+                                      setFormData(prev => ({ ...prev, origin: '' }))
+                                    }}
+                                    onFocus={() => {
+                                      setShowOriginSuggestions(true)
+                                      if (originSearch) handleGatewaySearch(originSearch, 'origin')
+                                    }}
+                                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-650 font-medium"
+                                  />
+                                  {showOriginSuggestions && (
+                                    <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg z-50 divide-y divide-slate-100 text-xs">
+                                      {isLoadingOrigin && (
+                                        <div className="p-3 text-slate-400 text-center">Searching gateways...</div>
+                                      )}
+                                      {!isLoadingOrigin && originSuggestions.length === 0 && (
+                                        <div className="p-3 text-slate-400 text-center">No gateways found. Try "Mumbai" or "INNSA"</div>
+                                      )}
+                                      {!isLoadingOrigin && originSuggestions.map((g) => (
+                                        <button
+                                          key={g.UNLOCODE || g.code}
+                                          type="button"
+                                          onClick={() => handleSelectGateway(g, 'origin')}
+                                          className="w-full text-left p-3 hover:bg-slate-50 flex flex-col cursor-pointer"
+                                        >
+                                          <span className="font-bold text-slate-800">{g.portName || g.name}</span>
+                                          <span className="text-[10px] text-slate-500 font-medium">{g.UNLOCODE || g.code} · {g.city}, {g.countryCode}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
 
-                              <div>
-                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Destination State Hub</label>
+                              <div className="relative z-40">
+                                <label className="block text-slate-700 font-semibold text-xs mb-1.5">Destination Gateway (Search Port/Hub)</label>
                                 <div className="relative">
-                                  <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                                  <select
-                                    name="destination"
-                                    value={formData.destination}
-                                    onChange={handleInputChange}
-                                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 appearance-none font-medium cursor-pointer"
-                                  >
-                                    <option value="" disabled>Select Destination Hub</option>
-                                    {INDIAN_STATES_HUBS.map((hub) => (
-                                      <option key={hub.value} value={hub.value}>{hub.label}</option>
-                                    ))}
-                                  </select>
+                                  <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
+                                  <input
+                                    type="text"
+                                    placeholder="Type Port or UNLOCODE (e.g. LAX, USLAX)"
+                                    value={destSearch}
+                                    onChange={(e) => {
+                                      setDestSearch(e.target.value)
+                                      handleGatewaySearch(e.target.value, 'destination')
+                                      setShowDestSuggestions(true)
+                                      setFormData(prev => ({ ...prev, destination: '' }))
+                                    }}
+                                    onFocus={() => {
+                                      setShowDestSuggestions(true)
+                                      if (destSearch) handleGatewaySearch(destSearch, 'destination')
+                                    }}
+                                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-650 font-medium"
+                                  />
+                                  {showDestSuggestions && (
+                                    <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg z-50 divide-y divide-slate-100 text-xs">
+                                      {isLoadingDest && (
+                                        <div className="p-3 text-slate-400 text-center">Searching gateways...</div>
+                                      )}
+                                      {!isLoadingDest && destSuggestions.length === 0 && (
+                                        <div className="p-3 text-slate-400 text-center">No gateways found. Try "Jebel" or "AEJEA"</div>
+                                      )}
+                                      {!isLoadingDest && destSuggestions.map((g) => (
+                                        <button
+                                          key={g.UNLOCODE || g.code}
+                                          type="button"
+                                          onClick={() => handleSelectGateway(g, 'destination')}
+                                          className="w-full text-left p-3 hover:bg-slate-50 flex flex-col cursor-pointer"
+                                        >
+                                          <span className="font-bold text-slate-800">{g.portName || g.name}</span>
+                                          <span className="text-[10px] text-slate-500 font-medium">{g.UNLOCODE || g.code} · {g.city}, {g.countryCode}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1096,20 +1297,59 @@ export default function NewShipmentEnquiry() {
                     </div>
                     <div className="text-right">
                       <span className="text-sm font-bold text-slate-800 block">
-                        {distanceVal > 0 ? `${distanceVal.toLocaleString()} km` : 'Select Hubs'}
+                        {distanceVal > 0 ? `${distanceVal.toLocaleString()} km` : 'Select Gateways'}
                       </span>
                     </div>
                   </div>
 
-                  {/* Transit Time */}
+                  {/* Actual Weight */}
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Transit Duration</span>
-                      <p className="text-xs text-slate-555 font-medium mt-0.5">Carrier speed standard</p>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Actual Weight</span>
+                      <p className="text-xs text-slate-550 font-medium mt-0.5">Gross cargo weight</p>
                     </div>
                     <div className="text-right">
                       <span className="text-sm font-bold text-slate-800 block">
-                        {estimate.days > 0 ? `${estimate.days} Days (${formData.serviceMode})` : 'Select Mode'}
+                        {formData.weight ? `${parseFloat(formData.weight).toLocaleString()} kg` : '0 kg'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Chargeable Weight & Basis */}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Chargeable Basis</span>
+                      <p className="text-xs text-slate-550 font-medium mt-0.5">{getChargeableWeightDetails().basis}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-slate-800 block">
+                        {getChargeableWeightDetails().weight}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Transit Range */}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Transit Range</span>
+                      <p className="text-xs text-slate-550 font-medium mt-0.5">Est. Door-to-Door</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-slate-800 block">
+                        {estimate.days > 0 ? `${estimate.days} - ${estimate.days + 3} Days (${formData.serviceMode})` : 'Select Mode'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Arrival Date */}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Arrival Date</span>
+                      <p className="text-xs text-slate-550 font-medium mt-0.5 font-sans">Target Delivery Est.</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-slate-800 block font-sans">
+                        {getArrivalDateStr()}
                       </span>
                     </div>
                   </div>
@@ -1117,8 +1357,8 @@ export default function NewShipmentEnquiry() {
                   {/* Cost */}
                   <div className="flex justify-between items-start pt-4 border-t border-slate-100">
                     <div>
-                      <span className="text-[10px] text-slate-500 block font-extrabold uppercase tracking-wider">ESTIMATED TOTAL</span>
-                      <p className="text-xs text-slate-450 font-semibold mt-0.5">Indicative flat base</p>
+                      <span className="text-[10px] text-slate-500 block font-extrabold uppercase tracking-wider">INDICATIVE TOTAL</span>
+                      <p className="text-xs text-slate-450 font-semibold mt-0.5">Total estimated cost</p>
                     </div>
                     <div className="text-right">
                       <span className="text-xl sm:text-2xl font-black text-slate-800 block">
