@@ -1,7 +1,22 @@
 node_modules/
 dist/
+<<<<<<< HEAD
+=======
+build/
+>>>>>>> 053bae8 (Add Risk Alerts Inbox updates and freight quote features)
 *.log
 .DS_Store
 .vscode/
 .idea/
 .gemini/
+<<<<<<< HEAD
+=======
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3
+.env
+venv/
+.venv/
+>>>>>>> 053bae8 (Add Risk Alerts Inbox updates and freight quote features)
